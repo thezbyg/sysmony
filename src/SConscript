@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+
+Import('*')
+import sys
+
+envl = env.Clone()
+
+envl.Append(LIBS=['rt'])
+envl.Append(CPPPATH=['.'])
+envl.Append(CPPFLAGS=['-std=c++0x'])
+
+if not envl.GetOption('clean'):
+	envl.ParseConfig('pkg-config --cflags --libs $GLIB_PC')
+	envl.ParseConfig('pkg-config --cflags --libs $GTHREAD_PC')
+	envl.ParseConfig('pkg-config --cflags --libs $GTK_PC')
+	envl.ParseConfig('pkg-config --cflags --libs $LUA_PC')
+
+envl_lib = envl.Clone()
+
+sysmony_core = envl_lib.SharedLibrary(
+	'sysmony_core',
+	source = [envl.Glob('engine_api/*.cpp') + envl.Glob('layout/*.cpp') + envl.Glob('lua/*.cpp')])
+
+render_engine = envl_lib.SharedLibrary(
+	'sysmony_render_engine',
+	source = [envl.Glob('engine1/*.cpp')])
+
+sources = envl.Glob('*.cpp') 
+
+objects = []
+
+envl.Append(LIBS=['sysmony_core'])
+
+executable = envl.Program(
+	'sysmony',
+	source = [sources, objects])
+
+Return(['executable', 'sysmony_core', 'render_engine'])
