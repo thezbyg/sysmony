@@ -76,7 +76,55 @@ static const struct luaL_reg lua_color_f[] = {
 	{NULL, NULL}
 };
 
+static int lua_red(lua_State *L){
+	shared_ptr<Color> color = lua_checkcolor(L, 1);
+	if (lua_type(L, 2) != LUA_TNIL){
+		color->r = luaL_checknumber(L, 2);
+		return 0;
+	}else{
+		lua_pushnumber(L, color->r);
+		return 1;
+	}
+}
+
+static int lua_green(lua_State *L){
+	shared_ptr<Color> color = lua_checkcolor(L, 1);
+	if (lua_type(L, 2) != LUA_TNIL){
+		color->g = luaL_checknumber(L, 2);
+		return 0;
+	}else{
+		lua_pushnumber(L, color->g);
+		return 1;
+	}
+}
+
+static int lua_blue(lua_State *L){
+	shared_ptr<Color> color = lua_checkcolor(L, 1);
+	if (lua_type(L, 2) != LUA_TNIL){
+		color->b = luaL_checknumber(L, 2);
+		return 0;
+	}else{
+		lua_pushnumber(L, color->b);
+		return 1;
+	}
+}
+
+static int lua_alpha(lua_State *L){
+	shared_ptr<Color> color = lua_checkcolor(L, 1);
+	if (lua_type(L, 2) != LUA_TNIL){
+		color->a = luaL_checknumber(L, 2);
+		return 0;
+	}else{
+		lua_pushnumber(L, color->a);
+		return 1;
+	}
+}
+
 static const struct luaL_reg lua_color_m[] = {
+	{"red", lua_red},
+	{"green", lua_green},
+	{"blue", lua_blue},
+	{"alpha", lua_alpha},
 	{NULL, NULL}
 };
 
@@ -94,9 +142,11 @@ int luaopen_color(lua_State *L){
 	const char *derived_from[] = {"color", 0};
 	sm_lua_add_derivation_info(L, derived_from);
 
-	luaL_openlib(L, NULL, lua_color_m, 0);
-	luaL_openlib(L, "color", lua_color_f, 0);
+	luaL_register(L, NULL, lua_color_m);
+	luaL_register(L, "color", lua_color_f);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 

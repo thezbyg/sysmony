@@ -94,7 +94,9 @@ int luaopen_renderlib(lua_State *L){
 
 	luaL_openlib(L, NULL, lua_renderlib_m, 0);
 	luaL_openlib(L, "renderlib", lua_renderlib_f, 0);
-
+	
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
@@ -169,6 +171,8 @@ int luaopen_instance(lua_State *L){
 	luaL_openlib(L, NULL, lua_instance_m, 0);
 	luaL_openlib(L, "instance", lua_instance_f, 0);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
@@ -247,6 +251,8 @@ int luaopen_rootwindow(lua_State *L){
 	luaL_openlib(L, NULL, lua_rootwindow_m, 0);
 	luaL_openlib(L, "rootwindow", lua_rootwindow_f, 0);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 

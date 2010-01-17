@@ -38,12 +38,15 @@ class PollingLuaUpdate:public PollingUpdate{
 protected:
 	lua_State *L;
 	int function_ptr;
+	int argument_ptr;
 
 	virtual void update();
 public:
-	PollingLuaUpdate(lua_State *L, int function_ptr, uint32_t update_interval, uint32_t now);
+	PollingLuaUpdate(lua_State *L, int function_ptr, int argument_ptr, uint32_t update_interval, uint32_t now);
 	virtual ~PollingLuaUpdate();
 };
+
+int luaopen_pollingluaupdate(lua_State *L);
 
 }
 

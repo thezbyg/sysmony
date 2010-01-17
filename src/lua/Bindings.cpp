@@ -117,6 +117,8 @@ static int luaopen_widget(lua_State *L){
 
 	luaL_register(L, NULL, lua_widget_m);
 	luaL_register(L, "widget", lua_widget_f);
+	
+	lua_pop(L, 2);
 
 	return 1;
 }
@@ -207,6 +209,8 @@ static int luaopen_label(lua_State *L){
 	luaL_register(L, NULL, lua_label_m);
 	luaL_register(L, "label", lua_label_f);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
@@ -313,6 +317,8 @@ static int luaopen_image(lua_State *L){
 	luaL_register(L, NULL, lua_image_m);
 	luaL_register(L, "image", lua_image_f);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
@@ -383,6 +389,8 @@ static int luaopen_separator(lua_State *L){
 	luaL_register(L, NULL, lua_separator_m);
 	luaL_register(L, "separator", lua_separator_f);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
@@ -480,6 +488,8 @@ static int luaopen_container(lua_State *L){
 	luaL_register(L, NULL, lua_container_m);
 	luaL_register(L, "container", lua_container_f);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
@@ -584,6 +594,8 @@ static int luaopen_sm_table(lua_State *L){
 	lua_pushnumber(L, Table::AttachOptions::Fill);
 	lua_settable(L, -3);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
@@ -665,6 +677,8 @@ static int luaopen_box(lua_State *L){
 	luaL_register(L, NULL, lua_container_m);
 	luaL_register(L, NULL, lua_box_m);
 	luaL_register(L, "box", lua_box_f);
+	
+	lua_pop(L, 2);
 
 	return 1;
 }
@@ -737,6 +751,8 @@ static int luaopen_vbox(lua_State *L){
 	luaL_register(L, NULL, lua_vbox_m);
 	luaL_register(L, "vbox", lua_vbox_f);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
@@ -810,6 +826,8 @@ static int luaopen_hbox(lua_State *L){
 	luaL_register(L, NULL, lua_hbox_m);
 	luaL_register(L, "hbox", lua_hbox_f);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
@@ -899,6 +917,8 @@ static int luaopen_alignment(lua_State *L){
 	luaL_register(L, NULL, lua_alignment_m);
 	luaL_register(L, "alignment", lua_alignment_f);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
@@ -986,84 +1006,13 @@ static int luaopen_window(lua_State *L){
 	luaL_register(L, NULL, lua_window_m);
 	luaL_register(L, "window", lua_window_f);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 
 
 
-
-
-
-static int lua_newpollingluaupdate(lua_State *L){
-
-	int function_ptr;
-
-	luaL_checktype(L, 2, LUA_TFUNCTION);
-	lua_pushvalue(L, 2);
-	function_ptr = luaL_ref(L, LUA_REGISTRYINDEX);
-
-	double interval = luaL_checknumber(L, 3);
-
-	uint32_t now = getTime();
-
-	void *dataptr = lua_newuserdata(L, sizeof(shared_ptr<PollingLuaUpdate>));
-	new(dataptr) shared_ptr<PollingLuaUpdate>(new PollingLuaUpdate(L, function_ptr, interval, now));
-	luaL_getmetatable(L, "pollingluaupdate");
-	lua_setmetatable(L, -2);
-	return 1;
-}
-
-shared_ptr<PollingLuaUpdate> lua_checkpollingluaupdate(lua_State *L, int index){
-	void *dataptr;
-	if ((dataptr = sm_lua_getuserdata(L, index, "pollingluaupdate"))){
-		return *reinterpret_cast<shared_ptr<PollingLuaUpdate>*>(dataptr);
-	}
-	luaL_argcheck(L, false, index, "`pollingluaupdate' expected");
-	return shared_ptr<PollingLuaUpdate>();
-}
-
-int lua_pushpollingluaupdate(lua_State *L, shared_ptr<PollingLuaUpdate> pollingluaupdate_){
-	void *dataptr = lua_newuserdata(L, sizeof(shared_ptr<PollingLuaUpdate>));
-	new(dataptr) shared_ptr<PollingLuaUpdate>(pollingluaupdate_);
-	luaL_getmetatable(L, "pollingluaupdate");
-	lua_setmetatable(L, -2);
-	return 1;
-}
-
-static int lua_pollingluaupdate_gc(lua_State *L){
-	void *dataptr= luaL_checkudata(L, 1, "pollingluaupdate");
-	reinterpret_cast<shared_ptr<PollingLuaUpdate>*>(dataptr)->~shared_ptr();
-	return 0;
-}
-
-static const struct luaL_reg lua_pollingluaupdate_f[] = {
-	{"new", lua_newpollingluaupdate},
-	{NULL, NULL}
-};
-
-static const struct luaL_reg lua_pollingluaupdate_m[] = {
-	{NULL, NULL}
-};
-
-static int luaopen_pollingluaupdate(lua_State *L){
-	luaL_newmetatable(L, "pollingluaupdate");
-
-	lua_pushstring(L, "__index");
-	lua_pushvalue(L, -2);
-	lua_settable(L, -3);
-
-	lua_pushstring(L, "__gc");
-	lua_pushcfunction(L, lua_pollingluaupdate_gc);
-	lua_settable(L, -3);
-
-	const char *derived_from[] = {"pollingluaupdate", 0};
-	sm_lua_add_derivation_info(L, derived_from);
-
-	luaL_register(L, NULL, lua_pollingluaupdate_m);
-	luaL_register(L, "pollingluaupdate", lua_pollingluaupdate_f);
-
-	return 1;
-}
 
 
 
@@ -1082,8 +1031,6 @@ int luaopen_all_bindingswindow(lua_State *L){
 	luaopen_separator(L);
 	luaopen_image(L);
 	luaopen_sm_table(L);
-
-	luaopen_pollingluaupdate(L);
 	return 0;
 }
 

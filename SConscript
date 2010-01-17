@@ -5,8 +5,9 @@ import string
 import sys
 
 from scons_tools.extra import *
+from scons_tools.environment import *
 
-env = Environment(ENV=os.environ)
+env = SMEnvironment(ENV=os.environ)
 
 vars = Variables(os.path.join(env.GetLaunchDir(), 'user-config.py'))
 vars.Add('DESTDIR', 'Directory to install under', '/usr/local')
@@ -26,11 +27,17 @@ if not env.GetOption('clean'):
 		'GTHREAD_PC':		{'checks':{'gthread-2.0':'>= 2.22'}},
 		})
 		
-if env['DEBUG']==False:
-	env.Append(LINKFLAGS=['-s'],
-		CPPDEFINES=['NDEBUG'],
-		CDEFINES=['NDEBUG'],
-		CPPFLAGS=['-Wall'])
+if env['DEBUG']==True:
+	env.Append(
+		CPPFLAGS=['-Wall', '-g3', '-O0'], CFLAGS=['-Wall', '-g3', '-O0'],
+		)
+else:
+	env.Append(
+		CPPDEFINES=['NDEBUG'], CDEFINES=['NDEBUG'],
+		CPPFLAGS=['-Wall', '-O2'], CFLAGS=['-Wall', '-O2'],
+		)
+
+
 	
 env['LIBPATH']=['.']
 
@@ -47,6 +54,7 @@ env.Replace(
 
 Decider('MD5-timestamp')
 
+extern_libs = SConscript(['extern/SConscript'], exports='env')
 executable, sysmony_core, render_engine = SConscript(['src/SConscript'], exports='env')
 
 

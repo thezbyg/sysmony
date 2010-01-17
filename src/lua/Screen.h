@@ -16,69 +16,17 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Uname.h"
-
-#include <sys/utsname.h>
-
-#include <stdint.h>
+#ifndef LUA_SCREEN_H_
+#define LUA_SCREEN_H_
 
 extern "C"{
 #include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
-#include <luaconf.h>
 }
 
 namespace lua {
 
-static int lua_uname_get(lua_State *L){
-	struct utsname name;
-	if (uname(&name)==0){
-		lua_newtable(L);
-		int table = lua_gettop(L);
-
-		lua_pushstring(L, "sysname");
-		lua_pushstring(L, name.sysname);
-		lua_settable(L, table);
-
-		lua_pushstring(L, "nodename");
-		lua_pushstring(L, name.nodename);
-		lua_settable(L, table);
-
-		lua_pushstring(L, "release");
-		lua_pushstring(L, name.release);
-		lua_settable(L, table);
-
-		lua_pushstring(L, "version");
-		lua_pushstring(L, name.version);
-		lua_settable(L, table);
-
-		lua_pushstring(L, "machine");
-		lua_pushstring(L, name.machine);
-		lua_settable(L, table);
-
-		return 1;
-	}
-	return 0;
-}
-
-static const struct luaL_reg lua_uname_f[] = {
-	{"get", lua_uname_get},
-	{NULL, NULL}
-};
-
-int luaopen_uname(lua_State *L){
-	luaL_newmetatable(L, "uname");
-
-	lua_pushstring(L, "__index");
-	lua_pushvalue(L, -2);
-	lua_settable(L, -3);
-
-	luaL_openlib(L, "uname", lua_uname_f, 0);
-	
-	lua_pop(L, 2);
-	
-	return 0;
-}
+int luaopen_screen(lua_State *L);
 
 }
+
+#endif /* LUA_SCREEN_H_ */

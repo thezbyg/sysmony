@@ -16,9 +16,9 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Sysinfo.h"
+#include "Screen.h"
 
-#include <sys/sysinfo.h>
+#include <gdk/gdk.h>
 
 #include <stdint.h>
 
@@ -31,88 +31,41 @@ extern "C"{
 
 namespace lua {
 
-static int lua_sysinfo_get(lua_State *L){
-	struct sysinfo info;
-	if (sysinfo(&info)==0){
-		lua_newtable(L);
-		int table = lua_gettop(L);
+static int lua_screen_get_dimensions(lua_State *L){
+	
+	GdkScreen *screen = gdk_screen_get_default();
 
-		lua_pushstring(L, "uptime");
-		lua_pushnumber(L, info.uptime);
-		lua_settable(L, table);
+	lua_newtable(L);
+	int table = lua_gettop(L);
 
-		lua_pushstring(L, "totalram");
-		lua_pushnumber(L, info.totalram | (uint64_t(info.totalhigh)<<32));
-		lua_settable(L, table);
+	lua_pushstring(L, "width");
+	lua_pushinteger(L, gdk_screen_get_width(screen));
+	lua_settable(L, table);
 
-		lua_pushstring(L, "freeram");
-		lua_pushnumber(L, info.freeram | (uint64_t(info.freehigh)<<32));
-		lua_settable(L, table);
+	lua_pushstring(L, "height");
+	lua_pushinteger(L, gdk_screen_get_height(screen));
+	lua_settable(L, table);
 
-		lua_pushstring(L, "sharedram");
-		lua_pushnumber(L, info.sharedram);
-		lua_settable(L, table);
-
-		lua_pushstring(L, "bufferram");
-		lua_pushnumber(L, info.bufferram);
-		lua_settable(L, table);
-
-		lua_pushstring(L, "totalswap");
-		lua_pushnumber(L, info.totalswap);
-		lua_settable(L, table);
-
-		lua_pushstring(L, "freeswap");
-		lua_pushnumber(L, info.freeswap);
-		lua_settable(L, table);
-
-		lua_pushstring(L, "procs");
-		lua_pushnumber(L, info.procs);
-		lua_settable(L, table);
-
-		lua_pushstring(L, "loads");
-		lua_newtable(L);
-		int loads_table = lua_gettop(L);
-
-		lua_pushstring(L, "1");
-		lua_pushnumber(L, info.loads[0]);
-		lua_settable(L, loads_table);
-
-		lua_pushstring(L, "5");
-		lua_pushnumber(L, info.loads[1]);
-		lua_settable(L, loads_table);
-
-		lua_pushstring(L, "15");
-		lua_pushnumber(L, info.loads[2]);
-		lua_settable(L, loads_table);
-
-		lua_settable(L, table);
-
-		lua_pushstring(L, "mem_unit");
-		lua_pushnumber(L, info.mem_unit);
-		lua_settable(L, table);
-
-		return 1;
-	}
-	return 0;
+	return 1;
 }
 
-static const struct luaL_reg lua_sysinfo_f[] = {
-	{"get", lua_sysinfo_get},
+static const struct luaL_reg lua_screen_f[] = {
+	{"get_dimensions", lua_screen_get_dimensions},
 	{NULL, NULL}
 };
 
-int luaopen_sysinfo(lua_State *L){
-	luaL_newmetatable(L, "sysinfo");
+int luaopen_screen(lua_State *L){
+	luaL_newmetatable(L, "screen");
 
 	lua_pushstring(L, "__index");
 	lua_pushvalue(L, -2);
 	lua_settable(L, -3);
 
-	luaL_openlib(L, "sysinfo", lua_sysinfo_f, 0);
-
-	lua_pop(L, 2);
+	luaL_register(L, "screen", lua_screen_f);
 	
-	return 0;
+	lua_pop(L, 2);
+
+	return 1;
 }
 
 }

@@ -143,6 +143,10 @@ void RenderStyle::predraw(layout::Widget *widget, DrawContext *draw_context){
 	
 		cairo_rounded_rectangle(cr, 1.2, 1.2, allocation.width-2.4, allocation.height-2.4, 6, 0.5);
 		
+		cairo_set_source_rgba(cr, 0, 0, 0, 0.6);
+		cairo_set_line_width(cr, 3);
+		cairo_stroke_preserve(cr);
+		
 		cairo_pattern_t *linpat;
 		linpat = cairo_pattern_create_linear(0, 0, 0, allocation.height);
 		cairo_pattern_add_color_stop_rgba(linpat, 0, window_color.r, window_color.g, window_color.b, window_color.a);
@@ -152,10 +156,7 @@ void RenderStyle::predraw(layout::Widget *widget, DrawContext *draw_context){
 		cairo_fill_preserve(cr);
 		cairo_pattern_destroy(linpat);
 		
-		cairo_set_source_rgba(cr, 0, 0, 0, 0.6);
-		cairo_set_line_width(cr, 3);
-		cairo_stroke_preserve(cr);
-		
+
 		cairo_set_source_rgba(cr, window_border_color.r, window_border_color.g, window_border_color.b, window_border_color.a);
 		cairo_set_line_width(cr, 0.5);
 		cairo_stroke(cr);
@@ -320,7 +321,14 @@ static const struct luaL_reg lua_renderstyle_f[] = {
 	{NULL, NULL}
 };
 
+static int lua_text_color(lua_State *L){
+	shared_ptr<RenderStyle> render_style = lua_checkrenderstyle(L, 1);
+	lua_pushcolor(L, shared_ptr<Color>(new Color(render_style->text_color)));
+	return 1;
+}
+
 static const struct luaL_reg lua_renderstyle_m[] = {
+	{"text_color", lua_text_color},
 	{NULL, NULL}
 };
 
@@ -340,6 +348,8 @@ int luaopen_renderstyle(lua_State *L){
 
 	luaL_openlib(L, NULL, lua_renderstyle_m, 0);
 	luaL_openlib(L, "renderstyle", lua_renderstyle_f, 0);
+	
+	lua_pop(L, 2);
 		
 	return 1;
 }

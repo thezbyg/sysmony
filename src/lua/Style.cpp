@@ -91,6 +91,8 @@ int luaopen_style(lua_State *L){
 	luaL_openlib(L, NULL, lua_style_m, 0);
 	luaL_openlib(L, "style", lua_style_f, 0);
 
+	lua_pop(L, 2);
+	
 	return 1;
 }
 

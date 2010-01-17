@@ -19,13 +19,11 @@
 #include "Instance.h"
 #include "Paths.h"
 
-#include "lua/Bindings.h"
+#include "lua/AllBindings.h"
 #include "lua/Instance.h"
-#include "lua/Sysinfo.h"
-#include "lua/Uname.h"
-#include "lua/DateTime.h"
-#include "lua/Style.h"
-#include "lua/Color.h"
+
+#include <glib/gstdio.h>
+#include <string.h>
 
 extern "C"{
 #include <lua.h>
@@ -246,22 +244,11 @@ void RootWindow::draw(Rect2<double> &rect, cairo_t *cr){
 	dc.setCairo(cr);
 
 	if (window) {
-		
-		//shared_ptr<engine::StyleState> style_state = shared_ptr<engine::StyleState>(render->getDefaultStyleState());
-		//dc.pushStyleState(style_state);
-		
-		//dc.pushStyleStateClone();
-		//window->applyStyles(&dc);
-		
 		window->draw(rect, &dc);
-		
-		//dc.popStyleState();
-		
 	}else{
 		cerr << "RootWindow is NULL" << endl;
 	}
 }
-
 
 
 
@@ -272,6 +259,7 @@ shared_ptr<RootWindow> Instance::getWindow(GdkWindow *gdk_window){
 	}
 	return shared_ptr<RootWindow>();
 }
+
 
 static void event_func(GdkEvent *e, Instance *instance) {
 	
@@ -286,15 +274,13 @@ static void event_func(GdkEvent *e, Instance *instance) {
 		g_main_loop_quit(instance->getMainloop());
 		break;
 	
-	case GDK_BUTTON_PRESS:
-		/*printf("button pressed\n");
-		gdk_window_invalidate_rect(e->button.window, 0, true);*/
-		break;
+	/*case GDK_BUTTON_PRESS:
+
+		break;*/
 	
-	case GDK_KEY_PRESS:
-		//printf("key pressed\n");
-		//gdk_window_invalidate_rect(e->key.window, 0, true);
-		break;
+	/*case GDK_KEY_PRESS:
+
+		break;*/
 	
 	case GDK_EXPOSE:
 	
@@ -328,22 +314,12 @@ Instance::~Instance(){
 	lua_close(L);
 }
 
+
 Instance::Instance(){
-	
 	
 	L= luaL_newstate();
 	luaL_openlibs(L);
 	
-	luaopen_all_bindingswindow(L);
-	luaopen_instance(L);
-	luaopen_rootwindow(L);
-	luaopen_renderlib(L);
-	luaopen_sysinfo(L);
-	luaopen_uname(L);
-	luaopen_datetime(L);
-	luaopen_style(L);
-	luaopen_color(L);
-
 	int status;
 	char *tmp;
 
@@ -357,10 +333,14 @@ Instance::Instance(){
 	lua_pushstring(L, "path");
 	lua_pushstring(L, lua_path);
 	lua_settable(L, -3);
+	lua_pop(L, 1);
 	
 	g_free(lua_path);
 	g_free(lua_root_path);
 	g_free(lua_user_path);
+	
+	
+	luaopen_all_sm_bindings(L);
 	
 	tmp = build_filename("init.lua");
 	status = luaL_loadfile(L, tmp) || lua_pcall(L, 0, 0, 0);
@@ -369,12 +349,63 @@ Instance::Instance(){
 	}
 	g_free(tmp);
 	
+
+	struct stat st;
+	tmp = build_config_path("user_init.lua");
+	if (g_stat(tmp, &st) != 0){
+		gchar* config_dir = build_config_path(NULL);
+		if (g_stat(config_dir, &st)!=0){
+			g_mkdir(config_dir, S_IRWXU);
+		}
+		g_free(config_dir);
+		
+		gchar *user_init_template_path = build_filename("user_init_template.lua");
+		
+		FILE *user_init_template = fopen(user_init_template_path, "rb");
+		if (user_init_template){
+		
+			FILE *user_init = fopen(tmp, "wb");
+			if (user_init){
+				char temp[4096];
+				uint32_t length;
+				
+				while (!feof(user_init_template)){
+					length = fread(temp, 1, 4096, user_init_template);
+					if (length > 0){
+						fwrite(temp, 1, length, user_init);
+						if (length != 4096) break;
+					}else break;
+				}
+				
+				fclose(user_init);
+			}
+		
+			fclose(user_init_template);
+		}
+		
+		g_free(user_init_template_path);
+	}
+	
+	if (g_stat(tmp, &st) == 0){
+		status = luaL_loadfile(L, tmp) || lua_pcall(L, 0, 0, 0);
+		if (status) {
+			cerr << lua_tostring(L, -1) << endl;
+		}
+	}
+	g_free(tmp);
 	
 	
 	lua_pushstring(L, "sysmony");
 	lua_gettable(L, LUA_GLOBALSINDEX);
 	lua_pushstring(L, "data_path");
 	lua_pushstring(L, tmp = build_filename(NULL));
+	lua_settable(L, -3);
+	g_free(tmp);
+	
+	lua_pushstring(L, "sysmony");
+	lua_gettable(L, LUA_GLOBALSINDEX);
+	lua_pushstring(L, "config_path");
+	lua_pushstring(L, tmp = build_config_path(NULL));
 	lua_settable(L, -3);
 	g_free(tmp);
 	

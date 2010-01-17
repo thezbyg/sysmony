@@ -87,8 +87,10 @@ int luaopen_datetime(lua_State *L){
 	lua_pushvalue(L, -2);
 	lua_settable(L, -3);
 
-	luaL_openlib(L, "datetime", lua_datetime_f, 0);
+	luaL_register(L, "datetime", lua_datetime_f);
 
+	lua_pop(L, 2);
+	
 	return 0;
 }
 
