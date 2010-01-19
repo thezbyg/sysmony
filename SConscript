@@ -22,7 +22,7 @@ except OSError:     # ignore on systems that don't support umask
 if not env.GetOption('clean'):
 	env = ConfirmLibs(env, {
 		'GLIB_PC': 			{'checks':{'glib-2.0':'>= 2.16.0'}},
-		'GTK_PC': 			{'checks':{'gtk+-2.0':'>= 2.16.0'}},
+		'GDK_PC': 			{'checks':{'gdk-2.0':'>= 2.16.0'}},
 		'LUA_PC': 			{'checks':{'lua':'>= 5.1', 'lua5.1':'>= 5.1'}},
 		'GTHREAD_PC':		{'checks':{'gthread-2.0':'>= 2.22'}},
 		})
@@ -67,7 +67,10 @@ env.Alias(target="build", source=[
 env.Alias(target="install", source=[
 	env.InstallProgram(dir=env['DESTDIR'] +'/bin', source=[executable]),
 	env.InstallProgram(dir=env['DESTDIR'] +'/lib', source=[sysmony_core, render_engine]),
-	env.InstallData(dir=env['DESTDIR'] +'/share/sysmony', source=[env.Glob('share/sysmony/*.png'), env.Glob('share/sysmony/*.lua')]),
+	
+	env.InstallData(dir=env['DESTDIR'] +'/share/sysmony', source=[env.Glob('share/sysmony/*.lua')]),
+	env.InstallData(dir=env['DESTDIR'] +'/share/sysmony/logo', source=[env.Glob('share/sysmony/logo/*.png')]),
+	
 ])
 
 

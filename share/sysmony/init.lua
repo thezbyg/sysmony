@@ -15,6 +15,7 @@ sysmony = {}
 update = {}
 
 require('standard')
+require('lsb_release')
 
 sysmony.build = function (instance)
 
@@ -32,7 +33,6 @@ sysmony.build = function (instance)
 		window_border_color = color:new(0.18, 0.98, 0.12, 1),	
 		font_size = 9,
 		font_weight = 400,
-		font_name = "Sans",
 		})
 	
 	window1:add_style(main_style)
@@ -48,9 +48,8 @@ sysmony.build = function (instance)
 	
 	
 	local time_style = renderstyle:new({
-		font_name = 'Bitfont',
-		font_weight = 400,
-		font_size = 30,
+		font_weight = 600,
+		font_size = 16,
 	})
 	
 	update.time.label_time = label:new('')
@@ -84,11 +83,18 @@ sysmony.build = function (instance)
 	register_updater(root_window1, update.calendar, 1)
 	
 	
-	
+	local distributor = lsb_release.get_distributor()
+	if distributor then
+		distributor = distributor:lower()
+	else
+		distributor = 'unknown'
+	end
 	
 	local vbox2 = vbox:new(0, false)
 	
-	vbox1:add_widget(center(image:new(sysmony.data_path .. '/debian.png')), true, false)
+	local logo = image:new(sysmony.data_path .. '/logo/' .. distributor .. '.png')
+	logo:mask(true)	
+	vbox1:add_widget(center(logo), true, false)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	

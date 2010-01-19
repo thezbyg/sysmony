@@ -12,7 +12,7 @@ envl.Append(CPPFLAGS=['-std=c++0x'])
 if not envl.GetOption('clean'):
 	envl.ParseConfig('pkg-config --cflags --libs $GLIB_PC')
 	envl.ParseConfig('pkg-config --cflags --libs $GTHREAD_PC')
-	envl.ParseConfig('pkg-config --cflags --libs $GTK_PC')
+	envl.ParseConfig('pkg-config --cflags --libs $GDK_PC')
 	envl.ParseConfig('pkg-config --cflags --libs $LUA_PC')
 
 envl_lib = envl.Clone()

@@ -23,14 +23,13 @@
 
 #include <string>
 
-typedef struct _GdkPixbuf GdkPixbuf;
-
 namespace layout {
 
 class Image:public Widget{
 protected:
 	std::string filename;
-	GdkPixbuf *pixbuf;
+	cairo_surface_t *image;
+	bool image_as_mask;
 public:
 
 	Image(const char* filename);
@@ -40,6 +39,8 @@ public:
 	virtual void configure();
 
 	void setImageFilename(const char* filename);
+	void setImageAsMask(bool image_as_mask);
+	bool getImageAsMask() const;
 };
 
 }

@@ -283,7 +283,7 @@ static const struct luaL_reg lua_image_f[] = {
 static int lua_image_filename(lua_State *L){
 	shared_ptr<Image> image = lua_checkimage(L, 1);
 
-	if (lua_type(L, 2)==LUA_TSTRING){
+	if (lua_type(L, 2) == LUA_TSTRING){
 		const char *filename= luaL_checkstring(L, 2);
 		image->setImageFilename(filename);
 		return 0;
@@ -293,9 +293,21 @@ static int lua_image_filename(lua_State *L){
 	}
 }
 
+static int lua_image_mask(lua_State *L){
+	shared_ptr<Image> image = lua_checkimage(L, 1);
+
+	if (lua_type(L, 2) == LUA_TBOOLEAN){
+    	image->setImageAsMask(lua_toboolean(L, 2));
+		return 0;
+	}else{
+        lua_pushboolean(L, image->getImageAsMask());
+        return 1;
+	}
+}
 
 static const struct luaL_reg lua_image_m[] = {
 	{"filename", lua_image_filename},
+	{"mask", lua_image_mask},
 	{NULL, NULL}
 };
 

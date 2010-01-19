@@ -30,13 +30,14 @@ using namespace std;
 namespace layout {
 
 Image::Image(const char* filename_){
-	pixbuf = NULL;
+	image = NULL;
 	setImageFilename(filename_);
+	image_as_mask = false;
 }
 
 Image::~Image(){
-	if (pixbuf) g_object_unref(pixbuf);
-	pixbuf = NULL;
+	if (image) cairo_surface_destroy(image);
+	image = NULL;
 }
 
 void Image::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_context){
@@ -44,10 +45,20 @@ void Image::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_contex
 	if (current_style) current_style->predraw(this, draw_context);
 
 	cairo_t *cr = draw_context->getCairo();
-	if (pixbuf){
+	if (image){
 		cairo_save(cr);
-		gdk_cairo_set_source_pixbuf (cr, pixbuf, 0, 0);
-		cairo_paint (cr);
+		
+		if (!image_as_mask){
+			cairo_set_source_surface(cr, image, 0, 0);
+			cairo_paint(cr);
+		}else{
+            Color color;
+			if (current_style) color = current_style->getTextColor(this);
+			
+			cairo_set_source_rgba(cr, color.r, color.g, color.b, color.a);
+			cairo_mask_surface(cr, image, 0, 0);  
+			cairo_fill(cr);
+        }
 
 		cairo_restore(cr);
 	}
@@ -61,8 +72,8 @@ void Image::configure(){
 	applyStyles();
 	if (configured) return;
 
-	if (pixbuf){
-		setRequisition(Vector2<double>(gdk_pixbuf_get_width(pixbuf), gdk_pixbuf_get_height(pixbuf)));
+	if (image){
+		setRequisition(Vector2<double>(cairo_image_surface_get_width(image), cairo_image_surface_get_height(image)));
 	}else{
 		setRequisition(Vector2<double>(0, 0));
 	}
@@ -74,15 +85,10 @@ void Image::setImageFilename(const char* filename_){
 
 	if (filename != filename_){
 
-		if (pixbuf) g_object_unref(pixbuf);
-		pixbuf = NULL;
+		if (image) cairo_surface_destroy(image);
+		image = cairo_image_surface_create_from_png (filename_);
+        
 
-		GError *error = NULL;
-		pixbuf = gdk_pixbuf_new_from_file(filename_, &error);
-		if (error){
-			cerr << error->message << endl;
-			g_error_free(error);
-		}
 		filename = filename_;
 
 		Window* window = getTopLevelWindow();
@@ -94,15 +100,23 @@ void Image::setImageFilename(const char* filename_){
 
 		configured = false;
 
-		/*Vector2<double> old_requisition = requisition;
-		//configure();
-
-		if (old_requisition != requisition){
-			if (window)	window->queueEventOnce(shared_ptr<EventRequestReallocation>(new EventRequestReallocation(this)));
-			configured = false;
-		}*/
-
 	}
 }
 
+void Image::setImageAsMask(bool image_as_mask_){
+	if (image_as_mask != image_as_mask_){
+    	image_as_mask = image_as_mask_;
+		
+		Window* window = getTopLevelWindow();
+		if (window){
+			window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, allocation.getSize())));
+		}
+	}	
 }
+
+bool Image::getImageAsMask() const{
+	return image_as_mask;	
+} 
+
+}
+
