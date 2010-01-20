@@ -22,7 +22,7 @@ sysmony.build = function (instance)
 	local render_lib = instance:get_render_lib('sysmony_render_engine')
 
 	local window1 = window:new()
-	window1:resize(250, 400)
+	window1:resize(250, 500)
 	window1:padding(10, 10)
 	
 	local main_style = renderstyle:new({
@@ -72,8 +72,13 @@ sysmony.build = function (instance)
 	
 	update.net.label_upload = label:new('')
 	update.net.label_download = label:new('')
-	register_updater(root_window1, update.net, 3)
-
+	update.net.label_upload_speed = label:new('')
+	update.net.label_download_speed = label:new('')
+	update.net.graph_upload_speed = graph:new(1, 2.5 * 1024, 60)
+	update.net.graph_upload_speed:logarithmic_scale(0.01, 10)
+	update.net.graph_download_speed = graph:new(1, 5 * 1024, 60)
+	update.net.graph_download_speed:logarithmic_scale(0.01, 10)
+	register_updater(root_window1, update.net, 1)
 	
 	update.meminfo.label_free_memory_percent = label:new('')
 	register_updater(root_window1, update.meminfo, 10)
@@ -119,7 +124,14 @@ sysmony.build = function (instance)
 	vbox2:add_widget(separator:new(true), true, false)
 	
 	vbox2:add_widget(label_and_value('Upload: ', update.net.label_upload), true, false)
+	vbox2:add_widget(label_and_value('Upload speed: ', update.net.label_upload_speed), true, false)
+	update.net.graph_upload_speed:min_size(1, 40)
+	vbox2:add_widget(update.net.graph_upload_speed, true, false)
+
 	vbox2:add_widget(label_and_value('Download: ', update.net.label_download), true, false)
+	vbox2:add_widget(label_and_value('Download speed: ', update.net.label_download_speed), true, false)
+	update.net.graph_download_speed:min_size(1, 40)
+	vbox2:add_widget(update.net.graph_download_speed, true, false)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	

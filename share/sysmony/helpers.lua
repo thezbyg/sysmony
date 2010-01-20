@@ -79,3 +79,23 @@ format_size = function (size)
 	return string.format("%01.2f ", size) .. units[unit]
 end
 
+format_speed = function (size, per)
+	local units = {
+		'B/',
+		'KiB/',
+		'MiB/',	
+		'GiB/',
+		'TiB/',
+		'PiB/',	
+	}
+	local unit = 1
+	while size>=1000 do
+		size = size / 1024
+		unit = unit + 1
+	end
+	return string.format("%01.2f ", size) .. units[unit] .. per
+end
+
+
+
+

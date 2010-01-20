@@ -16,84 +16,42 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LAYOUT_WIDGET_H_
-#define LAYOUT_WIDGET_H_
+#ifndef LAYOUT_GRAPH_H_
+#define LAYOUT_GRAPH_H_
 
-namespace layout {
-class Widget;
-class Window;
-}
+#include "Widget.h"
 
-#include "DrawContext.h"
-#include "engine_api/Style.h"
-
-#include "Rect2.h"
-#include "Vector2.h"
-
-#include <stdint.h>
-#include <stdbool.h>
-#include <memory>
-#include <list>
+#include <vector>
 
 namespace layout {
 
-class Widget{
-protected:
-	Widget* parent;
-	std::list<std::shared_ptr<engine::Style> > style;
-	std::shared_ptr<engine::Style> current_style;
-
-	bool visible;
-	bool dirty;
-	bool configured;
-	bool allocated;
-	bool style_built;
-
-	Vector2<double> requisition;
-	Rect2<double> allocation;
-	Vector2<double> min_requisition;
-
-	uint64_t style_mask[1];
-
+class Graph:public Widget{
 public:
+    enum Scale{
+    	LINEAR,
+		LOGARITHMIC,
+	};
+protected:
+	double upper_bound;
+	double lower_bound;
 
-	Widget();
-	virtual ~Widget();
+	std::vector<double> values;
+	uint32_t position;
 
-	Widget* getParent() const;
-	Widget* getTopLevel() const;
-	void reparent(const Widget* widget);
-
-	Window* getTopLevelWindow() const;
-
-	const Rect2<double>& getAllocation() const;
-	void setAllocation(const Rect2<double>& allocation);
-
-	const Vector2<double>& getRequisition() const;
-	void setRequisition(const Vector2<double>& requisition);
-
-	const Vector2<double>& getMinRequisition() const;
-	void setMinRequisition(const Vector2<double>& min_requisition);
-
-	void addStyle(std::shared_ptr<engine::Style> style);
-	void setStyleMask(uint64_t style_mask);
-	void applyStyles();
-
-	std::shared_ptr<engine::Style> getCurrentStyle();
-
-	void markDirty();
-	void markUnconfigured();
-	void markUnallocated();
-	void markStyleDirty();
+	Scale scale;
+	double scale_arg1;
+	double scale_arg2;
+public:
+	Graph(double lower_bound, double upper_bound, uint32_t data_points);
 
 	virtual void draw(const Rect2<double>& invalidated_rect, DrawContext *draw_context);
 	virtual void configure();
-	virtual void allocate();
-	virtual void build_style();
 
-	virtual void removeChild(std::shared_ptr<Widget> widget);
+	void pushValue(double val);
+
+	void setLogarithmicScale(double lower_x, double upper_x);
 };
 
 }
 
-#endif /*LAYOUT_WIDGET_H_*/
+#endif /*LAYOUT_GRAPH_H_*/

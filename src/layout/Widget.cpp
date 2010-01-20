@@ -31,6 +31,7 @@ namespace layout {
 Widget::Widget(){
 	visible = false;
 	requisition.set(0, 0);
+    min_requisition.set(0, 0);
 	configured = false;
 	allocated = false;
 	dirty = true;
@@ -69,6 +70,22 @@ const Vector2<double>& Widget::getRequisition() const{
 
 void Widget::setRequisition(const Vector2<double>& requisition_){
 	requisition = requisition_;
+}
+
+
+const Vector2<double>& Widget::getMinRequisition() const{
+	return min_requisition;
+}
+
+void Widget::setMinRequisition(const Vector2<double>& min_requisition_){
+	if (min_requisition != min_requisition_){
+		min_requisition = min_requisition_;
+
+		Window* window;
+		if ((window = getTopLevelWindow())){
+			window->queueEventOnce(shared_ptr<EventRequestReallocation>(new EventRequestReallocation(this)));
+		}
+	}
 }
 
 void Widget::removeChild(shared_ptr<Widget> widget){

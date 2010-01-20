@@ -66,6 +66,19 @@ update.cpuinfo = {
 update.net = {
 	label_upload = nil,
 	label_download = nil,
+
+	label_upload_speed = nil,
+	label_download_speed = nil,
+	
+	graph_upload_speed = nil,
+	graph_download_speed = nil,
+	
+	prev_download = nil,
+	prev_upload = nil,
+	prev_download_lp = 0,
+	prev_upload_lp = 0,
+
+	interface = "eth0",
 	
 	callback = function (self)
 
@@ -79,9 +92,30 @@ update.net = {
 			if line == nil then break end
 			
 			local interface, download, upload = string.match(line, "([%a%d]+):%s*(%d+)%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+(%d+)%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+")
-			if interface=='eth0' then
-				self.label_upload:text(format_size(tonumber(upload)))
-				self.label_download:text(format_size(tonumber(download)))
+			if interface == self.interface then
+				if self.label_upload then self.label_upload:text(format_size(tonumber(upload))) end
+				if self.label_download then self.label_download:text(format_size(tonumber(download))) end
+
+                if self.prev_upload then
+					self.prev_upload_lp = self.prev_upload_lp + 0.3 * (tonumber(upload) - self.prev_upload - self.prev_upload_lp)
+                
+					if self.graph_upload_speed then                	
+						self.graph_upload_speed:push_value(self.prev_upload_lp / 1024)
+					end
+				end
+				if self.prev_download then
+					self.prev_download_lp = self.prev_download_lp + 0.3 * (tonumber(download) - self.prev_download - self.prev_download_lp)
+					
+					if self.graph_download_speed then
+						self.graph_download_speed:push_value(self.prev_download_lp / 1024)
+					end				
+				end
+				
+				if self.label_upload_speed then self.label_upload_speed:text(format_speed(tonumber(self.prev_upload_lp), 's')) end
+				if self.label_download_speed then self.label_download_speed:text(format_speed(tonumber(self.prev_download_lp), 's')) end
+
+				self.prev_upload = tonumber(upload)
+				self.prev_download = tonumber(download)
 			end
 		end		
 

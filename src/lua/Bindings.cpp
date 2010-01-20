@@ -25,6 +25,7 @@
 #include "layout/Separator.h"
 #include "layout/Image.h"
 #include "layout/Table.h"
+#include "layout/Graph.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -95,9 +96,24 @@ static int lua_set_style_mask(lua_State *L){
 	return 0;
 }
 
+static int lua_min_size(lua_State *L){
+	shared_ptr<Widget> widget = lua_checkwidget(L, 1);
+	if ((lua_type(L, 2) == LUA_TNUMBER) && (lua_type(L, 3) == LUA_TNUMBER)){
+		widget->setMinRequisition(Vector2<double>(lua_tonumber(L, 2), lua_tonumber(L, 3)));
+		return 0;
+	}else{
+		Vector2<double> min_req = widget->getMinRequisition();
+        lua_pushnumber(L, min_req.x);
+		lua_pushnumber(L, min_req.y);
+		return 2;
+	}
+	return 0;
+}
+
 static const struct luaL_reg lua_widget_m[] = {
 	{"add_style", lua_add_style},
 	{"set_style_mask", lua_set_style_mask},
+	{"min_size", lua_min_size},
 	{NULL, NULL}
 };
 
@@ -123,6 +139,107 @@ static int luaopen_widget(lua_State *L){
 	return 1;
 }
 
+
+
+
+
+
+
+
+ 
+
+static int lua_newgraph(lua_State *L){
+
+	double lo = luaL_checknumber(L, 2);
+	double hi = luaL_checknumber(L, 3);
+	uint32_t data_size = luaL_checkinteger(L, 4);
+
+	void *dataptr = lua_newuserdata(L, sizeof(shared_ptr<Graph>));
+	new(dataptr) shared_ptr<Graph>(new Graph(lo, hi, data_size));
+	luaL_getmetatable(L, "graph");
+	lua_setmetatable(L, -2);
+	return 1;
+}
+
+shared_ptr<Graph> lua_checkgraph(lua_State *L, int index){
+	void *dataptr;
+	if ((dataptr = sm_lua_getuserdata(L, index, "graph"))){
+		return *reinterpret_cast<shared_ptr<Graph>*>(dataptr);
+	}
+	luaL_argcheck(L, false, index, "`graph' expected");
+	return shared_ptr<Graph>();
+}
+
+int lua_pushgraph(lua_State *L, shared_ptr<Graph> graph_){
+	void *dataptr = lua_newuserdata(L, sizeof(shared_ptr<Graph>));
+	new(dataptr) shared_ptr<Graph>(graph_);
+	luaL_getmetatable(L, "graph");
+	lua_setmetatable(L, -2);
+	return 1;
+}
+
+static int lua_graph_gc(lua_State *L){
+	void *dataptr= luaL_checkudata(L, 1, "graph");
+	reinterpret_cast<shared_ptr<Graph>*>(dataptr)->~shared_ptr();
+	return 0;
+}
+
+static const struct luaL_reg lua_graph_f[] = {
+	{"new", lua_newgraph},
+	{NULL, NULL}
+};
+
+
+static int lua_graph_push_value(lua_State *L){
+	shared_ptr<Graph> graph = lua_checkgraph(L, 1);
+
+	if (lua_type(L, 2)==LUA_TNUMBER){
+		graph->pushValue(lua_tonumber(L, 2));
+		return 0;
+	}
+	return 0;
+}
+
+static int lua_graph_logarithmic_scale(lua_State *L){
+	shared_ptr<Graph> graph = lua_checkgraph(L, 1);
+                                                                  
+	if (lua_type(L, 2)==LUA_TNUMBER && lua_type(L, 3)==LUA_TNUMBER){
+		graph->setLogarithmicScale(lua_tonumber(L, 2), lua_tonumber(L, 3));
+		return 0;
+	}
+	return 0;
+}
+
+
+static const struct luaL_reg lua_graph_m[] = {
+	{"push_value", lua_graph_push_value},
+	{"logarithmic_scale", lua_graph_logarithmic_scale},
+	{NULL, NULL}
+};
+
+static int luaopen_graph(lua_State *L){
+	luaL_newmetatable(L, "graph");
+
+	lua_pushstring(L, "__index");
+	lua_pushvalue(L, -2);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "__gc");
+	lua_pushcfunction(L, lua_graph_gc);
+	lua_settable(L, -3);
+
+	const char *derived_from[] = {"widget", "graph", 0};
+	sm_lua_add_derivation_info(L, derived_from);
+
+	luaL_register(L, NULL, lua_widget_m);
+	luaL_register(L, NULL, lua_graph_m);
+	luaL_register(L, "graph", lua_graph_f);
+
+	lua_pop(L, 2);
+	
+	return 1;
+}
+ 
 
 
 
@@ -1042,6 +1159,7 @@ int luaopen_all_bindingswindow(lua_State *L){
 	luaopen_alignment(L);
 	luaopen_separator(L);
 	luaopen_image(L);
+	luaopen_graph(L);
 	luaopen_sm_table(L);
 	return 0;
 }
