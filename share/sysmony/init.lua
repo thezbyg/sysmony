@@ -15,9 +15,14 @@ sysmony = {}
 update = {}
 
 require('standard')
-require('calendar')
-require('network')
 require('lsb_release')
+require('calendar_updater')
+require('network_updater')
+require('datetime_updater')
+require('memory_updater')
+require('uptime_updater')
+require('kernel_updater')
+require('cpuinfo_updater')
 
 sysmony.build = function (instance)
 
@@ -76,22 +81,23 @@ sysmony.build = function (instance)
 		font_size = 16,
 	})
 	
-	update.time.label_time = label:new('')
-	update.time.label_time:add_style(time_style)
-	update.time.label_date = label:new('')
-	register_updater(root_window1, update.time, 1)
+	local datetime = update.datetime:new()
+	datetime.label_time = label:new('')
+	datetime.label_time:add_style(time_style)
+	datetime.label_date = label:new('')
+	register_updater(root_window1, datetime, 1)
 
-	
-	update.uptime.label_uptime = label:new('')
-	register_updater(root_window1, update.uptime, 5)
+	local uptime = update.uptime:new()
+	uptime.label_uptime = label:new('')
+	register_updater(root_window1, uptime, 5)
 
+	local kernel = update.kernel:new()
+	kernel.label_kernel = label:new('')
+	register_updater(root_window1, kernel, 60)
 	
-	update.kernel.label_kernel = label:new('')
-	register_updater(root_window1, update.kernel, 60)
-	
-	
-	update.cpuinfo.label_cpuinfo = label:new('')
-	register_updater(root_window1, update.cpuinfo, 5)
+	local cpuinfo = update.cpuinfo:new()
+	cpuinfo.label_cpuinfo = label:new('')
+	register_updater(root_window1, cpuinfo, 5)
 	
 	
 	local network = update.network:new('eth0')
@@ -105,8 +111,9 @@ sysmony.build = function (instance)
 	network.graph_download_speed:logarithmic_scale(0.01, 10)
 	register_updater(root_window1, network, 1)
 	
-	update.meminfo.label_free_memory_percent = label:new('')
-	register_updater(root_window1, update.meminfo, 10)
+	local memory = update.memory:new()
+	memory.label_free_memory_percent = label:new('')
+	register_updater(root_window1, memory, 10)
 
 	local calendar = update.calendar:new()
 	local calendar_widget = calendar:build_calendar(main_style)
@@ -130,8 +137,8 @@ sysmony.build = function (instance)
 	
 	vbox1:add_widget(vbox2, true, false)
 	
-	vbox2:add_widget(center(update.time.label_time), true, false)
-	vbox2:add_widget(center(update.time.label_date), true, false)
+	vbox2:add_widget(center(datetime.label_time), true, false)
+	vbox2:add_widget(center(datetime.label_date), true, false)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
@@ -139,12 +146,12 @@ sysmony.build = function (instance)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
-	vbox2:add_widget(label_and_value('Kernel: ', update.kernel.label_kernel), true, false)
-	vbox2:add_widget(label_and_value('Uptime: ', update.uptime.label_uptime), true, false)
+	vbox2:add_widget(label_and_value('Kernel: ', kernel.label_kernel), true, false)
+	vbox2:add_widget(label_and_value('Uptime: ', uptime.label_uptime), true, false)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
-	vbox2:add_widget(label_and_value('CPU: ', update.cpuinfo.label_cpuinfo), true, false)
+	vbox2:add_widget(label_and_value('CPU: ', cpuinfo.label_cpuinfo), true, false)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
@@ -160,8 +167,8 @@ sysmony.build = function (instance)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
-	--vbox2:add_widget(label_and_value('Total Memory: ', update.meminfo.label_total_memory), true, false)
-	vbox2:add_widget(label_and_value('Free Memory: ', update.meminfo.label_free_memory_percent), true, false)
+	--vbox2:add_widget(label_and_value('Total Memory: ', memory.label_total_memory), true, false)
+	vbox2:add_widget(label_and_value('Free Memory: ', memory.label_free_memory_percent), true, false)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
