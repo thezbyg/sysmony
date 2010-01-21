@@ -15,6 +15,8 @@ sysmony = {}
 update = {}
 
 require('standard')
+require('calendar')
+require('network')
 require('lsb_release')
 
 sysmony.build = function (instance)
@@ -43,6 +45,28 @@ sysmony.build = function (instance)
 	local root_window1 = rootwindow:new(window1, render_lib)
 	instance:add_root_window(root_window1)
 	
+
+
+    local window2 = window:new()
+    window2:resize(250, 500)
+	window2:padding(10, 10)
+	window2:add_style(main_style)
+	window2:set_position(screen_size.width - 270 - 270, 20 + 250)
+    local root_window2 = rootwindow:new(window2, render_lib)
+	instance:add_root_window(root_window2)
+
+	local vbox1 = vbox:new(5, false)
+	window2:add_widget(vbox1)
+
+	local calendar = update.calendar:new()
+ 	local calendar_widget = calendar:build_calendar(main_style)
+	register_updater(root_window2, calendar, 1)
+    vbox1:add_widget(calendar_widget, true, false) 
+
+
+	vbox1:add_widget(separator:new(true), true, false)
+
+
 	local vbox1 = vbox:new(5, false)
 	window1:add_widget(vbox1)
 	
@@ -70,22 +94,23 @@ sysmony.build = function (instance)
 	register_updater(root_window1, update.cpuinfo, 5)
 	
 	
-	update.net.label_upload = label:new('')
-	update.net.label_download = label:new('')
-	update.net.label_upload_speed = label:new('')
-	update.net.label_download_speed = label:new('')
-	update.net.graph_upload_speed = graph:new(1, 2.5 * 1024, 60)
-	update.net.graph_upload_speed:logarithmic_scale(0.01, 10)
-	update.net.graph_download_speed = graph:new(1, 5 * 1024, 60)
-	update.net.graph_download_speed:logarithmic_scale(0.01, 10)
-	register_updater(root_window1, update.net, 1)
+	local network = update.network:new('eth0')
+	network.label_upload = label:new('')
+	network.label_download = label:new('')
+	network.label_upload_speed = label:new('')
+	network.label_download_speed = label:new('')
+	network.graph_upload_speed = graph:new(1, 2.5 * 1024, 60)
+	network.graph_upload_speed:logarithmic_scale(0.01, 10)
+	network.graph_download_speed = graph:new(1, 5 * 1024, 60)
+	network.graph_download_speed:logarithmic_scale(0.01, 10)
+	register_updater(root_window1, network, 1)
 	
 	update.meminfo.label_free_memory_percent = label:new('')
 	register_updater(root_window1, update.meminfo, 10)
 
-	
-	local calendar = update.calendar:build_calendar(main_style)
-	register_updater(root_window1, update.calendar, 1)
+	local calendar = update.calendar:new()
+	local calendar_widget = calendar:build_calendar(main_style)
+	register_updater(root_window1, calendar, 1)
 	
 	
 	local distributor = lsb_release.get_distributor()
@@ -110,7 +135,7 @@ sysmony.build = function (instance)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
-	vbox2:add_widget(calendar, true, false)
+	vbox2:add_widget(calendar_widget, true, false)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
@@ -123,15 +148,15 @@ sysmony.build = function (instance)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
-	vbox2:add_widget(label_and_value('Upload: ', update.net.label_upload), true, false)
-	vbox2:add_widget(label_and_value('Upload speed: ', update.net.label_upload_speed), true, false)
-	update.net.graph_upload_speed:min_size(1, 40)
-	vbox2:add_widget(update.net.graph_upload_speed, true, false)
+	vbox2:add_widget(label_and_value('Upload: ', network.label_upload), true, false)
+	vbox2:add_widget(label_and_value('Upload speed: ', network.label_upload_speed), true, false)
+	network.graph_upload_speed:min_size(1, 40)
+	vbox2:add_widget(network.graph_upload_speed, true, false)
 
-	vbox2:add_widget(label_and_value('Download: ', update.net.label_download), true, false)
-	vbox2:add_widget(label_and_value('Download speed: ', update.net.label_download_speed), true, false)
-	update.net.graph_download_speed:min_size(1, 40)
-	vbox2:add_widget(update.net.graph_download_speed, true, false)
+	vbox2:add_widget(label_and_value('Download: ', network.label_download), true, false)
+	vbox2:add_widget(label_and_value('Download speed: ', network.label_download_speed), true, false)
+	network.graph_download_speed:min_size(1, 40)
+	vbox2:add_widget(network.graph_download_speed, true, false)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
