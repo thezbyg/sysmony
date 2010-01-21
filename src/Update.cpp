@@ -21,8 +21,8 @@
 #include <time.h>
 #include <unistd.h>
 
-Update::Update(){
-
+Update::Update(Instance *instance_){
+	instance = instance_;
 }
 
 Update::~Update(){
@@ -51,7 +51,7 @@ bool Update::updatePending(uint32_t now){
 
 
 
-PollingUpdate::PollingUpdate(uint32_t update_interval_, uint32_t now){
+PollingUpdate::PollingUpdate(Instance *instance, uint32_t update_interval_, uint32_t now):Update(instance){
 	last_update = now - update_interval_;
 	update_interval = update_interval_;
 }
@@ -86,3 +86,4 @@ uint32_t PollingUpdate::getSleepTime(uint32_t now){
 bool PollingUpdate::updatePending(uint32_t now){
 	return (now - last_update >= update_interval);
 }
+

@@ -16,52 +16,63 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef UPDATE_H_
-#define UPDATE_H_
+#ifndef ROOT_WINDOW_H_
+#define ROOT_WINDOW_H_
 
-class Update;
-class PollingUpdate;
+#include "Update.h"
+#include "layout/Window.h"
+#include "engine_api/Render.h"
+#include "layout/Rect2.h"
 
-#include "layout/Widget.h"
-#include "Instance.h"
+#include <glib.h>
+#include <gdk/gdk.h>
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <list>
+#include <map>
 #include <memory>
 
-using namespace layout;
-using namespace std;
 
-class Update{
+class RootWindow{
 protected:
-	virtual bool updatePending(uint32_t now);
-	virtual void update();
+	GdkWindow *gdk_window;
+	std::shared_ptr<layout::Window> window;
+	std::list<std::shared_ptr<Update> > updates;
+	std::shared_ptr<engine::Render> render;
 
-	Instance *instance;
+	GCond *condition;
+	GMutex *mutex;
+	GThread *worker_thread;
+	bool worker_finish;
+
 public:
-	Update(Instance *instance);
-	virtual ~Update();
-
-	virtual bool tick(uint32_t now);
-
-
-	virtual uint32_t getSleepTime(uint32_t now); 
-};
-
-class PollingUpdate:public Update{
-protected:
-	uint32_t update_interval;
-	uint32_t last_update;
-
-	virtual bool updatePending(uint32_t now);
-	virtual void update();
-public:
-	PollingUpdate(Instance *instance, uint32_t update_interval, uint32_t now);
 	
-	virtual bool tick(uint32_t now);
+	RootWindow(std::shared_ptr<layout::Window> window, std::shared_ptr<engine::Render> render_lib);
+	~RootWindow();
 
-	virtual ~PollingUpdate();
-	virtual uint32_t getSleepTime(uint32_t now); 
+	void draw(layout::Rect2<double> &rect, cairo_t *cr);
+
+	void show();
+
+	void addUpdater(std::shared_ptr<Update> update);
+
+	void startUpdateThread();
+	void finishUpdateThread();
+	
+	void lockUpdates();
+	void unlockUpdates();
+
+	void updateThread();
+
+	struct RedrawData{
+		GdkWindow *window;
+		GdkRectangle rectangle;
+	};
+
+	static gpointer update_worker_thread(RootWindow *root_window);
+	static gboolean redraw_rectangle(struct RedrawData *redraw);
+
+	friend class Instance;
 };
 
-#endif /* UPDATE_H_ */
+#endif /* ROOT_WINDOW_H_ */
+

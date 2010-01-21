@@ -65,7 +65,7 @@ sysmony.build = function (instance)
 
 	local calendar = update.calendar:new()
  	local calendar_widget = calendar:build_calendar(main_style)
-	register_updater(root_window2, calendar, 1)
+	register_updater(instance, root_window2, calendar, 1)
     vbox1:add_widget(calendar_widget, true, false) 
 
 
@@ -85,19 +85,19 @@ sysmony.build = function (instance)
 	datetime.label_time = label:new('')
 	datetime.label_time:add_style(time_style)
 	datetime.label_date = label:new('')
-	register_updater(root_window1, datetime, 1)
+	register_updater(instance, root_window1, datetime, 1)
 
 	local uptime = update.uptime:new()
 	uptime.label_uptime = label:new('')
-	register_updater(root_window1, uptime, 5)
+	register_updater(instance, root_window1, uptime, 5)
 
 	local kernel = update.kernel:new()
 	kernel.label_kernel = label:new('')
-	register_updater(root_window1, kernel, 60)
+	register_updater(instance, root_window1, kernel, 60)
 	
 	local cpuinfo = update.cpuinfo:new()
 	cpuinfo.label_cpuinfo = label:new('')
-	register_updater(root_window1, cpuinfo, 5)
+	register_updater(instance, root_window1, cpuinfo, 5)
 	
 	
 	local network = update.network:new('eth0')
@@ -109,15 +109,15 @@ sysmony.build = function (instance)
 	network.graph_upload_speed:logarithmic_scale(0.01, 10)
 	network.graph_download_speed = graph:new(1, 5 * 1024, 60)
 	network.graph_download_speed:logarithmic_scale(0.01, 10)
-	register_updater(root_window1, network, 1)
+	register_updater(instance, root_window1, network, 1)
 	
 	local memory = update.memory:new()
 	memory.label_free_memory_percent = label:new('')
-	register_updater(root_window1, memory, 10)
+	register_updater(instance, root_window1, memory, 10)
 
 	local calendar = update.calendar:new()
 	local calendar_widget = calendar:build_calendar(main_style)
-	register_updater(root_window1, calendar, 1)
+	register_updater(instance, root_window1, calendar, 1)
 	
 	
 	local distributor = lsb_release.get_distributor()

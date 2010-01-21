@@ -20,6 +20,7 @@
 #define LUA_UPDATE_H_
 
 #include "Update.h"
+#include "Instance.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -42,7 +43,7 @@ protected:
 
 	virtual void update();
 public:
-	PollingLuaUpdate(lua_State *L, int function_ptr, int argument_ptr, uint32_t update_interval, uint32_t now);
+	PollingLuaUpdate(Instance *instance, lua_State *L, int function_ptr, int argument_ptr, uint32_t update_interval, uint32_t now);
 	virtual ~PollingLuaUpdate();
 };
 

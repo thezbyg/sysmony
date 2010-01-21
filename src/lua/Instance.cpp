@@ -37,6 +37,8 @@ extern "C"{
 #include <luaconf.h>
 }
 
+using namespace std;
+
 namespace lua {
 
 

@@ -37,7 +37,7 @@ using namespace std;
 
 namespace lua{
 
-PollingLuaUpdate::PollingLuaUpdate(lua_State *L_, int function_ptr_, int argument_ptr_, uint32_t update_interval_, uint32_t now):PollingUpdate(update_interval_, now){
+PollingLuaUpdate::PollingLuaUpdate(Instance *instance, lua_State *L_, int function_ptr_, int argument_ptr_, uint32_t update_interval_, uint32_t now):PollingUpdate(instance, update_interval_, now){
 	L = L_;
 	function_ptr = function_ptr_;
 	argument_ptr = argument_ptr_;
@@ -49,6 +49,8 @@ PollingLuaUpdate::~PollingLuaUpdate(){
 }
 
 void PollingLuaUpdate::update(){
+	instance->lockLua();
+
 	int status;
 	int stack_top = lua_gettop(L);
 	lua_rawgeti(L, LUA_REGISTRYINDEX, function_ptr);
@@ -60,6 +62,8 @@ void PollingLuaUpdate::update(){
 	}
 
 	lua_settop(L, stack_top);
+
+	instance->unlockLua();
 }
 
 
@@ -73,20 +77,22 @@ static int lua_newpollingluaupdate(lua_State *L){
 
 	int function_ptr, argument_ptr;
 
-	luaL_checktype(L, 2, LUA_TFUNCTION);
-	lua_pushvalue(L, 2);
+    Instance *instance = lua_checkinstance(L, 2);
+
+	luaL_checktype(L, 3, LUA_TFUNCTION);
+	lua_pushvalue(L, 3);
 	function_ptr = luaL_ref(L, LUA_REGISTRYINDEX);
 	
-	luaL_checktype(L, 3, LUA_TTABLE);
-	lua_pushvalue(L, 3);
+	luaL_checktype(L, 4, LUA_TTABLE);
+	lua_pushvalue(L, 4);
 	argument_ptr = luaL_ref(L, LUA_REGISTRYINDEX);
 
-	double interval = luaL_checknumber(L, 4);
+	double interval = luaL_checknumber(L, 5);
 
 	uint32_t now = getTime();
 
 	void *dataptr = lua_newuserdata(L, sizeof(shared_ptr<PollingLuaUpdate>));
-	new(dataptr) shared_ptr<PollingLuaUpdate>(new PollingLuaUpdate(L, function_ptr, argument_ptr, interval, now));
+	new(dataptr) shared_ptr<PollingLuaUpdate>(new PollingLuaUpdate(instance, L, function_ptr, argument_ptr, interval, now));
 	luaL_getmetatable(L, "pollingluaupdate");
 	lua_setmetatable(L, -2);
 	return 1;

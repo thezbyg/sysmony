@@ -62,194 +62,12 @@ static void clear_rect(cairo_t *cr, Rect2<double> &cliprect){
 
 }
 
-
-
-RootWindow::RootWindow(shared_ptr<layout::Window> window_, shared_ptr<engine::Render> render_lib_){
-	
-	window = window_;
-	render = render_lib_;
-
-	GdkWindow* rootwindow = gdk_get_default_root_window();
-	
-	GdkVisual* visual = gdk_visual_get_best_with_both(32, GDK_VISUAL_TRUE_COLOR);
-	
-	GdkWindowAttr attr;
-	attr.title = (gchar*)"sysmony";
-	attr.event_mask = GdkEventMask(GDK_EXPOSURE_MASK | GDK_BUTTON_PRESS_MASK | GDK_STRUCTURE_MASK);
-	attr.x = window->getPosition().x;
-	attr.y = window->getPosition().y;
-	attr.width = window->getAllocation().width;
-	attr.height = window->getAllocation().height;
-	
-	attr.window_type = GDK_WINDOW_TOPLEVEL;
-	attr.visual = visual;
-	attr.colormap = gdk_colormap_new(visual, true);
-	attr.override_redirect = false;
-	attr.wclass = GDK_INPUT_OUTPUT;
-	
-	gdk_window = gdk_window_new(rootwindow, &attr, 
-		GdkWindowAttributesType(GDK_WA_NOREDIR | GDK_WA_VISUAL | GDK_WA_COLORMAP 
-		| GDK_WA_X | GDK_WA_Y | GDK_WA_TITLE));
-	
-	gdk_window_stick(gdk_window);
-	gdk_window_set_keep_below(gdk_window, true);
-	
-	gdk_window_set_type_hint(gdk_window, GDK_WINDOW_TYPE_HINT_DESKTOP);
-	
-	
-	condition = g_cond_new();
-	mutex = g_mutex_new();
-	worker_finish = false;
-	worker_thread = NULL;
-	
-}
-
-void RootWindow::show(){
-	gdk_window_show_unraised(gdk_window);
-}
-
-RootWindow::~RootWindow(){
-	gdk_window_destroy(gdk_window);
-	
-	g_cond_free(condition);
-	g_mutex_free(mutex);
-}
-
-void RootWindow::addUpdater(shared_ptr<Update> update){
-	updates.push_back(update);
-}
-
-void RootWindow::startUpdateThread(){
-	GError *error;
-	worker_thread = g_thread_create((GThreadFunc)update_worker_thread, this, true, &error);
-}
-
-void RootWindow::finishUpdateThread(){
-	
-	worker_finish = true;
-	
-	g_mutex_lock(mutex);
-	g_cond_signal(condition);
-	
-	if (worker_thread){
-		g_thread_join(worker_thread);
-	}
-	
-	g_mutex_unlock(mutex);
-}
-
-void RootWindow::lockUpdates(){
-	g_mutex_lock(mutex);
-}
-
-void RootWindow::unlockUpdates(){
-	g_mutex_unlock(mutex);
-}
-
-gpointer RootWindow::update_worker_thread(RootWindow *root_window){
-	root_window->updateThread();
-	return 0;
-}
-
-gboolean RootWindow::redraw_rectangle(struct RedrawData *redraw){
-	gdk_threads_enter();
-	gdk_window_invalidate_rect(redraw->window, &redraw->rectangle, true);
-	delete redraw;
-	gdk_threads_leave();
-	return false;
-}
-
 uint32_t getTime(){
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	
 	return ts.tv_nsec/1000000 + ts.tv_sec*1000;
 }
-
-void RootWindow::updateThread(){
-	for (;;){
-		GTimeVal timeval;
-
-		g_mutex_lock(mutex);
-		
-		uint32_t min_sleep = 0;
-		uint32_t sleep_time;
-		uint32_t now = getTime();
-		
-		for (list<shared_ptr<Update> >::iterator i = updates.begin(); i != updates.end(); i++){
-			
-			(*i)->tick(now);
-			
-			if ((sleep_time = (*i)->getSleepTime(now))){
-				if ((!min_sleep) || (sleep_time < min_sleep))
-					min_sleep = sleep_time;
-			}
-			
-		}
-		
-		
-		Rect2<double> dirty_rect;
-		
-
-		if (window){
-			window->processEvents();
-			dirty_rect = window->getInvalidated();
-			window->clearInvalidated();
-		
-		
-			if (!dirty_rect.isEmpty()){
-				
-				struct RedrawData *redraw = new struct RedrawData;
-				
-				redraw->window = gdk_window;
-				redraw->rectangle.x = floor(dirty_rect.x)-1;
-				redraw->rectangle.y = floor(dirty_rect.y)-1;
-				redraw->rectangle.width = ceil(dirty_rect.width)+1;
-				redraw->rectangle.height = ceil(dirty_rect.height)+1;	
-				
-				GMainContext *main_context = g_main_context_get_thread_default();
-				GSource *source = g_idle_source_new();
-				g_source_set_callback(source, (GSourceFunc)redraw_rectangle, redraw, 0);
-				g_source_attach(source, main_context);
-				
-			}
-			
-		}
-			
-
-
-		g_get_current_time(&timeval);
-		if (min_sleep){
-			min_sleep &= 0xffffff00;
-			min_sleep += 300;
-
-			g_time_val_add(&timeval, min_sleep*1000);
-		}else{
-			g_time_val_add(&timeval, 30*60*1000*1000);
-		}
-		
-#ifndef NDEBUG
-		printf("Tick %d\n", min_sleep);
-#endif
-		
-		g_cond_timed_wait(condition, mutex, &timeval);
-		g_mutex_unlock(mutex);
-		
-		if (worker_finish) break;
-	}
-}
-
-void RootWindow::draw(Rect2<double> &rect, cairo_t *cr){
-	DrawContext dc;
-	dc.setCairo(cr);
-
-	if (window) {
-		window->draw(rect, &dc);
-	}else{
-		cerr << "RootWindow is NULL" << endl;
-	}
-}
-
 
 
 shared_ptr<RootWindow> Instance::getWindow(GdkWindow *gdk_window){
@@ -311,13 +129,14 @@ static void event_func(GdkEvent *e, Instance *instance) {
 }
 
 Instance::~Instance(){
+	g_static_rec_mutex_free(&lua_mutex);
 	lua_close(L);
 }
 
 
 Instance::Instance(){
 	
-	L= luaL_newstate();
+	L = luaL_newstate();
 	luaL_openlibs(L);
 	
 	int status;
@@ -338,8 +157,10 @@ Instance::Instance(){
 	g_free(lua_path);
 	g_free(lua_root_path);
 	g_free(lua_user_path);
-	
-	
+
+
+	g_static_rec_mutex_init(&lua_mutex);
+ 	
 	luaopen_all_sm_bindings(L);
 	
 	tmp = build_filename("init.lua");
@@ -400,30 +221,22 @@ Instance::Instance(){
 	lua_pushstring(L, "data_path");
 	lua_pushstring(L, tmp = build_filename(NULL));
 	lua_settable(L, -3);
+	lua_pop(L, 1);
 	g_free(tmp);
+
 	
 	lua_pushstring(L, "sysmony");
 	lua_gettable(L, LUA_GLOBALSINDEX);
 	lua_pushstring(L, "config_path");
 	lua_pushstring(L, tmp = build_config_path(NULL));
 	lua_settable(L, -3);
+	lua_pop(L, 1);
 	g_free(tmp);
 	
 	loadRenderLibrary("sysmony_render_engine");
 	getRenderLib("sysmony_render_engine")->loadLuaLibrary(L);
 	
 	buildLayout();
-	
-
-	
-	
-	
-	
-	
-
-	
-	//layout = shared_ptr<LayoutMain>(new LayoutMain());
-	//window = getWindow(this);
 	
 	gdk_event_handler_set((GdkEventFunc)event_func, this, NULL);
 	mainloop = g_main_loop_new(g_main_context_default(), FALSE);
@@ -479,6 +292,15 @@ void Instance::run(){
 GMainLoop* Instance::getMainloop() const{
 	return mainloop;	
 }
+
+void Instance::lockLua(){
+	g_static_rec_mutex_lock(&lua_mutex);	
+}
+
+void Instance::unlockLua(){
+	g_static_rec_mutex_unlock(&lua_mutex);	
+}
+
 	
 void Instance::addRootWindow(shared_ptr<RootWindow> root_window){
 	root_windows.push_back(root_window);
