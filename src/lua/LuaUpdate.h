@@ -40,11 +40,11 @@ protected:
 	lua_State *L;
 	int function_ptr;
 	int argument_ptr;
-
-	virtual void update();
 public:
 	PollingLuaUpdate(Instance *instance, lua_State *L, int function_ptr, int argument_ptr, uint32_t update_interval, uint32_t now);
 	virtual ~PollingLuaUpdate();
+	
+	virtual void update(uint32_t now);
 };
 
 int luaopen_pollingluaupdate(lua_State *L);

@@ -24,6 +24,7 @@ class PollingUpdate;
 
 #include "layout/Widget.h"
 #include "Instance.h"
+#include "RootWindow.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -34,33 +35,30 @@ using namespace std;
 
 class Update{
 protected:
-	virtual bool updatePending(uint32_t now);
-	virtual void update();
-
 	Instance *instance;
+	RootWindow *root_window;
 public:
 	Update(Instance *instance);
 	virtual ~Update();
 
-	virtual bool tick(uint32_t now);
+	virtual bool ready(uint32_t now);
+	virtual void update(uint32_t now);
+	virtual uint32_t getSleepTime(uint32_t now);
 
-
-	virtual uint32_t getSleepTime(uint32_t now); 
+	void setRootWindow(RootWindow *root_window);
+	RootWindow* getRootWindow() const;
 };
 
 class PollingUpdate:public Update{
 protected:
 	uint32_t update_interval;
 	uint32_t last_update;
-
-	virtual bool updatePending(uint32_t now);
-	virtual void update();
 public:
 	PollingUpdate(Instance *instance, uint32_t update_interval, uint32_t now);
-	
-	virtual bool tick(uint32_t now);
-
 	virtual ~PollingUpdate();
+	
+	virtual bool ready(uint32_t now);
+	virtual void update(uint32_t now);
 	virtual uint32_t getSleepTime(uint32_t now); 
 };
 

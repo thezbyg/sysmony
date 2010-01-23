@@ -25,6 +25,8 @@
 #include "Style.h"
 #include "Sysinfo.h"
 #include "Uname.h"
+#include "Timer.h"
+#include "LuaMpris.h"
 
 extern "C"{
 #include <lua.h>
@@ -47,6 +49,8 @@ int luaopen_all_sm_bindings(lua_State *L){
 	luaopen_style(L);
 	luaopen_sysinfo(L);
 	luaopen_uname(L);
+	luaopen_timer(L);
+	luaopen_luaupdatempris(L);
 	return 0;
 }
 

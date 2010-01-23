@@ -94,6 +94,7 @@ RootWindow::~RootWindow(){
 
 void RootWindow::addUpdater(shared_ptr<Update> update){
 	updates.push_back(update);
+	update->setRootWindow(this);
 }
 
 void RootWindow::startUpdateThread(){
@@ -137,6 +138,33 @@ gboolean RootWindow::redraw_rectangle(struct RedrawData *redraw){
 }
 
 
+void RootWindow::invalidate(){
+	Rect2<double> dirty_rect;
+	
+	if (window){
+		window->processEvents();
+		dirty_rect = window->getInvalidated();
+		window->clearInvalidated();
+	
+		if (!dirty_rect.isEmpty()){
+			
+			struct RedrawData *redraw = new struct RedrawData;
+			
+			redraw->window = gdk_window;
+			redraw->rectangle.x = floor(dirty_rect.x)-1;
+			redraw->rectangle.y = floor(dirty_rect.y)-1;
+			redraw->rectangle.width = ceil(dirty_rect.width)+1;
+			redraw->rectangle.height = ceil(dirty_rect.height)+1;	
+			
+			GMainContext *main_context = g_main_context_get_thread_default();
+			GSource *source = g_idle_source_new();
+			g_source_set_callback(source, (GSourceFunc)redraw_rectangle, redraw, 0);
+			g_source_attach(source, main_context);
+			
+		}	
+	}   
+}
+
 void RootWindow::updateThread(){
 	for (;;){
 		GTimeVal timeval;
@@ -149,7 +177,9 @@ void RootWindow::updateThread(){
 		
 		for (list<shared_ptr<Update> >::iterator i = updates.begin(); i != updates.end(); i++){
 			
-			(*i)->tick(now);
+			if ((*i)->ready(now)){
+            	(*i)->update(now);
+			}
 			
 			if ((sleep_time = (*i)->getSleepTime(now))){
 				if ((!min_sleep) || (sleep_time < min_sleep))
@@ -158,41 +188,14 @@ void RootWindow::updateThread(){
 			
 		}
 		
-		
-		Rect2<double> dirty_rect;
-		
-
-		if (window){
-			window->processEvents();
-			dirty_rect = window->getInvalidated();
-			window->clearInvalidated();
-		
-		
-			if (!dirty_rect.isEmpty()){
-				
-				struct RedrawData *redraw = new struct RedrawData;
-				
-				redraw->window = gdk_window;
-				redraw->rectangle.x = floor(dirty_rect.x)-1;
-				redraw->rectangle.y = floor(dirty_rect.y)-1;
-				redraw->rectangle.width = ceil(dirty_rect.width)+1;
-				redraw->rectangle.height = ceil(dirty_rect.height)+1;	
-				
-				GMainContext *main_context = g_main_context_get_thread_default();
-				GSource *source = g_idle_source_new();
-				g_source_set_callback(source, (GSourceFunc)redraw_rectangle, redraw, 0);
-				g_source_attach(source, main_context);
-				
-			}
-			
-		}
-			
-
+		invalidate();
 
 		g_get_current_time(&timeval);
 		if (min_sleep){
+			if (min_sleep < 33) min_sleep = 33;
+			/*
 			min_sleep &= 0xffffff00;
-			min_sleep += 300;
+			min_sleep += 33; */
 
 			g_time_val_add(&timeval, min_sleep*1000);
 		}else{
@@ -200,7 +203,7 @@ void RootWindow::updateThread(){
 		}
 		
 #ifndef NDEBUG
-		printf("Tick %d\n", min_sleep);
+		//printf("Tick %d\n", min_sleep);
 #endif
 		
 		g_cond_timed_wait(condition, mutex, &timeval);

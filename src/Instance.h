@@ -26,6 +26,8 @@ class Instance;
 #include "layout/Window.h"
 #include "engine_api/Render.h"
 
+#include <dbus/dbus.h>
+#include <dbus/dbus-glib.h>
 #include <glib.h>
 #include <gdk/gdk.h>
 
@@ -43,9 +45,19 @@ protected:
 	std::map<std::string, std::shared_ptr<engine::Render> > render_libs;
 
 	GMainLoop *mainloop;
+	DBusGConnection *bus;
 
 	lua_State *L;
     GStaticRecMutex lua_mutex;
+
+	typedef std::map<RootWindow*, std::list<Update*> > UpdateMap;
+	UpdateMap queued_updates;
+
+	GCond *msg_condition;
+	GMutex *msg_mutex;
+	GThread *msg_thread;
+	bool msg_worker_finish;
+ 
 public:
 	
 	Instance();
@@ -61,10 +73,17 @@ public:
 	void lockLua();
 	void unlockLua();
 
+	
+	DBusGConnection* getDBus();
+	void queueUpdate(Update *update);
+
 	int loadRenderLibrary(const char *library_name);
 	std::shared_ptr<engine::Render> getRenderLib(const char *library_name);
 
 	GMainLoop* getMainloop() const;
+
+private:
+	static gpointer msg_worker_thread(Instance *instance);
 };
 
 #endif /* INSTANCE_H_ */

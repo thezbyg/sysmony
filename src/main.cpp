@@ -30,8 +30,9 @@ int main(int argc, char **argv){
 	setlocale (LC_ALL, "");
 	gdk_init(&argc, &argv);
 	
-	Instance instance;
-	instance.run();
+	Instance *instance = new Instance;
+	instance->run();
+	delete instance;
 	
 	return 0;
 }

@@ -18,10 +18,12 @@
 
 #include "Instance.h"
 #include "Paths.h"
+#include "Time.h"
 
 #include "lua/AllBindings.h"
 #include "lua/Instance.h"
 
+#include <glib.h>
 #include <glib/gstdio.h>
 #include <string.h>
 
@@ -60,13 +62,6 @@ static void clear_rect(cairo_t *cr, Rect2<double> &cliprect){
 	
 #endif
 
-}
-
-uint32_t getTime(){
-	struct timespec ts;
-	clock_gettime(CLOCK_REALTIME, &ts);
-	
-	return ts.tv_nsec/1000000 + ts.tv_sec*1000;
 }
 
 
@@ -129,12 +124,25 @@ static void event_func(GdkEvent *e, Instance *instance) {
 }
 
 Instance::~Instance(){
+
+	g_cond_free(msg_condition);
+	g_mutex_free(msg_mutex);
+
 	g_static_rec_mutex_free(&lua_mutex);
+    dbus_g_connection_unref(bus);
 	lua_close(L);
 }
 
 
 Instance::Instance(){
+	
+    dbus_g_thread_init();
+
+ 	msg_condition = g_cond_new();
+	msg_mutex = g_mutex_new();
+	msg_worker_finish = false;
+	msg_thread = NULL;
+ 
 	
 	L = luaL_newstate();
 	luaL_openlibs(L);
@@ -235,11 +243,22 @@ Instance::Instance(){
 	
 	loadRenderLibrary("sysmony_render_engine");
 	getRenderLib("sysmony_render_engine")->loadLuaLibrary(L);
+
+
+	gdk_event_handler_set((GdkEventFunc)event_func, this, NULL);
+	mainloop = g_main_loop_new(g_main_context_default(), FALSE);
+	
+	
+	bus = dbus_g_bus_get(DBUS_BUS_SESSION, NULL);
+	if (!bus) {
+		cerr << "Failed to connect to the dbus daemon" << endl;
+	}
+
+
+
 	
 	buildLayout();
 	
-	gdk_event_handler_set((GdkEventFunc)event_func, this, NULL);
-	mainloop = g_main_loop_new(g_main_context_default(), FALSE);
 	
 	for (list<shared_ptr<RootWindow> >::iterator i = root_windows.begin(); i != root_windows.end(); i++){
 		
@@ -273,7 +292,7 @@ void Instance::buildLayout(){
 			if ((status=lua_pcall(L, 1, 0, 0))==0){
 
 			}else{
-				cerr<<"getWindow: "<<lua_tostring (L, -1)<<endl;
+				cerr<<"buildLayout: "<<lua_tostring (L, -1)<<endl;
 			}
 		}
 	}
@@ -281,11 +300,28 @@ void Instance::buildLayout(){
 }
 
 void Instance::run(){
+
+ 	GError *error;
+	msg_thread = g_thread_create((GThreadFunc)msg_worker_thread, this, true, &error);
+
+	
 	g_main_loop_run(mainloop);
 	
 	for (list<shared_ptr<RootWindow> >::iterator i = root_windows.begin(); i != root_windows.end(); i++){
 		(*i)->finishUpdateThread();
 	}
+
+
+ 	msg_worker_finish = true;
+	
+	g_mutex_lock(msg_mutex);
+	g_cond_signal(msg_condition);
+	
+	if (msg_thread){
+		g_thread_join(msg_thread);
+	}
+	
+	g_mutex_unlock(msg_mutex);
 
 }
 
@@ -315,7 +351,7 @@ int Instance::loadRenderLibrary(const char *library_name){
 		}
 		return -1;
 	}catch(...){
-		cerr << "Exception caught while loading " << library_name << endl;
+		cerr << "Exception caught while loading " << library_name << " render library" << endl;
 		return -1;
 	}
 }
@@ -324,5 +360,39 @@ shared_ptr<engine::Render> Instance::getRenderLib(const char *library_name){
 	if (render_libs.find(library_name) != render_libs.end()){
 		return render_libs[library_name];
 	}else return shared_ptr<engine::Render>();
+}
+
+
+DBusGConnection* Instance::getDBus(){
+	return bus;	
+}
+
+
+void Instance::queueUpdate(Update *update){
+	g_mutex_lock(msg_mutex);
+	queued_updates[update->getRootWindow()].push_back(update);
+    g_cond_signal(msg_condition);
+	g_mutex_unlock(msg_mutex);
+}
+
+gpointer Instance::msg_worker_thread(Instance *instance){
+	for (;;){
+		g_mutex_lock(instance->msg_mutex);
+
+ 		for (UpdateMap::iterator i = instance->queued_updates.begin(); i != instance->queued_updates.end(); i++){
+			(*i).first->lockUpdates();
+			for (list<Update*>::iterator j = (*i).second.begin(); j != (*i).second.end(); j++){
+				(*j)->update(getTime());	
+			}
+			(*i).first->invalidate();
+			(*i).first->unlockUpdates();
+		}
+		instance->queued_updates.clear();
+
+		g_cond_wait(instance->msg_condition, instance->msg_mutex);	
+		g_mutex_unlock(instance->msg_mutex);
+		if (instance->msg_worker_finish) break;
+	} 		
+	return 0;	
 }
 

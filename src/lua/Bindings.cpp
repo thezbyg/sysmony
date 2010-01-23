@@ -302,9 +302,21 @@ static int lua_label_text(lua_State *L){
 	}
 }
 
+static int lua_label_align(lua_State *L){
+	shared_ptr<Label> label = lua_checklabel(L, 1);
+
+	if (lua_type(L, 2)==LUA_TNUMBER){
+		label->setAlignment(static_cast<Label::Align>(luaL_checkinteger(L, 2)));
+		return 0;
+	}else{
+		lua_pushnumber(L, label->getAlignment());
+		return 1;
+	}
+}
 
 static const struct luaL_reg lua_label_m[] = {
 	{"text", lua_label_text},
+	{"align", lua_label_align},
 	{NULL, NULL}
 };
 
@@ -325,6 +337,18 @@ static int luaopen_label(lua_State *L){
 	luaL_register(L, NULL, lua_widget_m);
 	luaL_register(L, NULL, lua_label_m);
 	luaL_register(L, "label", lua_label_f);
+
+ 	lua_pushstring(L, "Left");
+	lua_pushinteger(L, Label::Align::Left);
+	lua_settable(L, -3);
+   	lua_pushstring(L, "Center");
+	lua_pushinteger(L, Label::Align::Center);
+	lua_settable(L, -3);
+ 	lua_pushstring(L, "Right");
+	lua_pushinteger(L, Label::Align::Right);
+	lua_settable(L, -3);
+ 
+
 
 	lua_pop(L, 2);
 	

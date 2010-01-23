@@ -48,7 +48,7 @@ PollingLuaUpdate::~PollingLuaUpdate(){
 	luaL_unref(L, LUA_REGISTRYINDEX, argument_ptr);
 }
 
-void PollingLuaUpdate::update(){
+void PollingLuaUpdate::update(uint32_t now){
 	instance->lockLua();
 
 	int status;
@@ -64,6 +64,8 @@ void PollingLuaUpdate::update(){
 	lua_settop(L, stack_top);
 
 	instance->unlockLua();
+
+	last_update = now;
 }
 
 

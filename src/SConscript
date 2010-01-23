@@ -11,6 +11,7 @@ envl.Append(CPPFLAGS=['-std=c++0x'])
 
 if not envl.GetOption('clean'):
 	envl.ParseConfig('pkg-config --cflags --libs $GLIB_PC')
+	envl.ParseConfig('pkg-config --cflags --libs $DBUSGLIB_PC')
 	envl.ParseConfig('pkg-config --cflags --libs $GTHREAD_PC')
 	envl.ParseConfig('pkg-config --cflags --libs $GDK_PC')
 	envl.ParseConfig('pkg-config --cflags --libs $LUA_PC')
@@ -19,9 +20,11 @@ envl_lib = envl.Clone()
 
 sysmony_core = envl_lib.SharedLibrary(
 	'sysmony_core',
-	source = [envl.Glob('engine_api/*.cpp') + envl.Glob('layout/*.cpp') + envl.Glob('lua/*.cpp')])
+	source = [envl.Glob('engine_api/*.cpp') + envl.Glob('layout/*.cpp') + envl.Glob('lua/*.cpp') + envl.Glob('update/*.cpp')])
 
-render_engine = envl_lib.SharedLibrary(
+envl.Append(LIBS=['sysmony_core'])
+
+render_engine = envl.SharedLibrary(
 	'sysmony_render_engine',
 	source = [envl.Glob('engine1/*.cpp')])
 
@@ -29,7 +32,6 @@ sources = envl.Glob('*.cpp')
 
 objects = []
 
-envl.Append(LIBS=['sysmony_core'])
 
 executable = envl.Program(
 	'sysmony',

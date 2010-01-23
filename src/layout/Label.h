@@ -26,10 +26,16 @@
 namespace layout {
 
 class Label:public Widget{
+public:
+ 	enum Align{
+    	Left,
+		Center,
+		Right,
+	};    
 protected:
 	std::string text;
+	Align align;
 public:
-
 	Label(const char* text);
 
 	virtual void draw(const Rect2<double>& invalidated_rect, DrawContext *draw_context);
@@ -37,6 +43,9 @@ public:
 
 	const char* getText() const;
 	void setText(const char* text);
+
+	const Align getAlignment() const;
+	void setAlignment(const Align alignment);
 };
 
 }

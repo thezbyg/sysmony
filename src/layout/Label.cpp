@@ -29,6 +29,7 @@ namespace layout {
 
 Label::Label(const char* text_){
 	setText(text_);
+	align = Left;
 }
 
 void Label::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_context){
@@ -53,6 +54,15 @@ void Label::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_contex
 
 	pango_layout_set_font_description(layout, desc);
 	pango_font_description_free(desc);
+
+    pango_layout_set_width(layout, allocation.width * PANGO_SCALE);
+	pango_layout_set_height(layout, allocation.height * PANGO_SCALE);
+ 	pango_layout_set_single_paragraph_mode(layout, true);
+
+	pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
+	
+	const PangoAlignment alignment_flags[] = {PANGO_ALIGN_LEFT, PANGO_ALIGN_CENTER, PANGO_ALIGN_RIGHT};
+	pango_layout_set_alignment(layout, alignment_flags[align]);
 
 	//pango_cairo_update_layout(cr, layout);
 
@@ -104,6 +114,8 @@ void Label::configure(){
 		pango_layout_set_font_description(pan_layout, desc);
 		pango_font_description_free(desc);
 
+        pango_layout_set_single_paragraph_mode(pan_layout, true); 
+
 		pango_cairo_update_layout(cr, pan_layout);
 
 		PangoRectangle ink_rect, logical_rect;
@@ -136,6 +148,21 @@ void Label::setText(const char* text_){
 			window->queueEventOnce(shared_ptr<EventRequestReallocation>(new EventRequestReallocation(this)));
 		}
 		configured = false;
+	}
+}
+
+const Label::Align Label::getAlignment() const{
+	return align;
+}
+
+void Label::setAlignment(const Align alignment){
+	if (align != alignment){
+    	align = alignment;	
+
+        Window* window = getTopLevelWindow();
+		if (window){
+			window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, allocation.getSize())));
+		} 
 	}
 }
 

@@ -6,13 +6,14 @@ import sys
 
 from scons_tools.extra import *
 from scons_tools.environment import *
+from scons_tools.colors import *
 
 env = SMEnvironment(ENV=os.environ)
 
-vars = Variables(os.path.join(env.GetLaunchDir(), 'user-config.py'))
-vars.Add('DESTDIR', 'Directory to install under', '/usr/local')
-vars.Add('DEBUG', 'Build with debug information', False)
-vars.Update(env)
+variables = Variables(os.path.join(env.GetLaunchDir(), 'user-config.py'))
+variables.Add('DESTDIR', 'Directory to install under', '/usr/local')
+variables.Add('DEBUG', 'Build with debug information', False)
+variables.Update(env)
 
 try:
 	umask = os.umask(022)
@@ -22,19 +23,20 @@ except OSError:     # ignore on systems that don't support umask
 if not env.GetOption('clean'):
 	env = ConfirmLibs(env, {
 		'GLIB_PC': 			{'checks':{'glib-2.0':'>= 2.16.0'}},
+		'DBUSGLIB_PC':		{'checks':{'dbus-glib-1':'>= 0.76'}},
 		'GDK_PC': 			{'checks':{'gdk-2.0':'>= 2.16.0'}},
 		'LUA_PC': 			{'checks':{'lua':'>= 5.1', 'lua5.1':'>= 5.1'}},
 		'GTHREAD_PC':		{'checks':{'gthread-2.0':'>= 2.22'}},
 		})
 		
-if env['DEBUG']==True:
+if env['DEBUG']:
 	env.Append(
 		CPPFLAGS=['-Wall', '-g3', '-O0'], CFLAGS=['-Wall', '-g3', '-O0'],
 		)
 else:
 	env.Append(
 		CPPDEFINES=['NDEBUG'], CDEFINES=['NDEBUG'],
-		CPPFLAGS=['-Wall', '-O2'], CFLAGS=['-Wall', '-O2'],
+		CPPFLAGS=['-Wall', '-O3'], CFLAGS=['-Wall', '-O3'],
 		)
 
 
@@ -42,14 +44,14 @@ else:
 env['LIBPATH']=['.']
 
 env.Replace(
-	SHCCCOMSTR = "Compiling ==> $TARGET",
-	SHCXXCOMSTR = "Compiling ==> $TARGET",
-	CCCOMSTR = "Compiling ==> $TARGET",
-	CXXCOMSTR = "Compiling ==> $TARGET",
-	SHLINKCOMSTR = "Linking shared ==> $TARGET",
-	LINKCOMSTR = "Linking ==> $TARGET",
-	LDMODULECOMSTR = "Linking module ==> $TARGET",
-	ARCOMSTR = "Linking static ==> $TARGET"
+	SHCCCOMSTR = Colors.COMPILE + "Compiling ==> " + Colors.TARGET + "$TARGET" + Colors.END,
+	SHCXXCOMSTR = Colors.COMPILE + "Compiling ==> " + Colors.TARGET + "$TARGET" + Colors.END,
+	CCCOMSTR = Colors.COMPILE + "Compiling ==> " + Colors.TARGET + "$TARGET" + Colors.END,
+	CXXCOMSTR = Colors.COMPILE + "Compiling ==> " + Colors.TARGET + "$TARGET" + Colors.END,
+	SHLINKCOMSTR = Colors.LINK + "Linking shared ==> " + Colors.TARGET + "$TARGET" + Colors.END,
+	LINKCOMSTR = Colors.LINK + "Linking ==> " + Colors.TARGET + "$TARGET" + Colors.END,
+	LDMODULECOMSTR = Colors.LINK + "Linking module ==> " + Colors.TARGET + "$TARGET" + Colors.END,
+	ARCOMSTR = Colors.LINK + "Linking static ==> " + Colors.TARGET + "$TARGET" + Colors.END
 	)
 
 Decider('MD5-timestamp')

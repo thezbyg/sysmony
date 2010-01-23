@@ -29,15 +29,11 @@ Update::~Update(){
 	
 }
 
-bool Update::tick(uint32_t now){
-	if (updatePending(now)){
-		update();
-		return true;		
-	}
+bool Update::ready(uint32_t now){
 	return false;
 }
 
-void Update::update(){
+void Update::update(uint32_t now){
 	
 }
 
@@ -45,13 +41,15 @@ uint32_t Update::getSleepTime(uint32_t now){
 	return 0;
 }
 
-bool Update::updatePending(uint32_t now){
-	return true;
+void Update::setRootWindow(RootWindow *root_window_){
+	root_window = root_window_;		
 }
 
+RootWindow* Update::getRootWindow() const{
+	return root_window;	
+}
 
-
-PollingUpdate::PollingUpdate(Instance *instance, uint32_t update_interval_, uint32_t now):Update(instance){
+PollingUpdate::PollingUpdate(Instance *instance_, uint32_t update_interval_, uint32_t now):Update(instance_){
 	last_update = now - update_interval_;
 	update_interval = update_interval_;
 }
@@ -60,17 +58,13 @@ PollingUpdate::~PollingUpdate(){
 	
 }
 
-void PollingUpdate::update(){
+void PollingUpdate::update(uint32_t now){
 
+	last_update = now;
 }
 
-bool PollingUpdate::tick(uint32_t now){
-	if (updatePending(now)){
-		update();
-		last_update = now;
-		return true;		
-	}
-	return false;
+bool PollingUpdate::ready(uint32_t now){
+	return (now - last_update >= update_interval);
 }
 
 uint32_t PollingUpdate::getSleepTime(uint32_t now){
@@ -83,7 +77,4 @@ uint32_t PollingUpdate::getSleepTime(uint32_t now){
 	}
 }
 
-bool PollingUpdate::updatePending(uint32_t now){
-	return (now - last_update >= update_interval);
-}
 

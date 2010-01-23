@@ -16,64 +16,36 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROOT_WINDOW_H_
-#define ROOT_WINDOW_H_
+#ifndef LUA_UPDATE_MPRIS_H_
+#define LUA_UPDATE_MPRIS_H_
 
-#include "Update.h"
-#include "layout/Window.h"
-#include "engine_api/Render.h"
-#include "layout/Rect2.h"
+#include "../update/UpdateMpris.h"
 
-#include <glib.h>
-#include <gdk/gdk.h>
-
-#include <list>
-#include <map>
+#include <stdint.h>
+#include <stdbool.h>
 #include <memory>
 
+extern "C"{
+#include <lua.h>
+}
 
-class RootWindow{
+namespace lua{
+
+class LuaUpdateMpris:public UpdateMpris{
 protected:
-	GdkWindow *gdk_window;
-	std::shared_ptr<layout::Window> window;
-	std::list<std::shared_ptr<Update> > updates;
-	std::shared_ptr<engine::Render> render;
-
-	GCond *condition;
-	GMutex *mutex;
-	GThread *worker_thread;
-	bool worker_finish;
-
-	void invalidate();
+	lua_State *L;
+	int function_ptr;
+	int argument_ptr;
 public:
+	LuaUpdateMpris(Instance *instance, RootWindow *root_window, lua_State *L, int function_ptr, int argument_ptr, const char *player_name);
+	virtual ~LuaUpdateMpris();
 	
-	RootWindow(std::shared_ptr<layout::Window> window, std::shared_ptr<engine::Render> render_lib);
-	~RootWindow();
-
-	void draw(layout::Rect2<double> &rect, cairo_t *cr);
-
-	void show();
-
-	void addUpdater(std::shared_ptr<Update> update);
-
-	void startUpdateThread();
-	void finishUpdateThread();
-	
-	void lockUpdates();
-	void unlockUpdates();
-
-	void updateThread();
-
-	struct RedrawData{
-		GdkWindow *window;
-		GdkRectangle rectangle;
-	};
-
-	static gpointer update_worker_thread(RootWindow *root_window);
-	static gboolean redraw_rectangle(struct RedrawData *redraw);
-
-	friend class Instance;
+	virtual void update(uint32_t now);
 };
 
-#endif /* ROOT_WINDOW_H_ */
+int luaopen_luaupdatempris(lua_State *L);
+
+}
+
+#endif /* LUA_UPDATE_MPRIS_H_ */
 

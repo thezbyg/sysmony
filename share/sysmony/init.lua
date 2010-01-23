@@ -23,6 +23,7 @@ require('memory_updater')
 require('uptime_updater')
 require('kernel_updater')
 require('cpuinfo_updater')
+require('mpris_updater')
 
 sysmony.build = function (instance)
 
@@ -38,7 +39,8 @@ sysmony.build = function (instance)
 		window_color = color:new(0.094118, 0.568627, 0.062745, 0.4),
 		secondary_window_color = color:new(0.035294, 0.164706, 0.043137, 0.15),
 		window_border_color = color:new(0.18, 0.98, 0.12, 1),	
-		font_size = 9,
+		font_name = "Liberation Sans",
+		font_size = 10,
 		font_weight = 400,
 		})
 	
@@ -53,21 +55,32 @@ sysmony.build = function (instance)
 
 
     local window2 = window:new()
-    window2:resize(250, 500)
+    window2:resize(400, 250)
 	window2:padding(10, 10)
 	window2:add_style(main_style)
-	window2:set_position(screen_size.width - 270 - 270, 20 + 250)
+	window2:set_position(screen_size.width - 420 - 270, 20)
     local root_window2 = rootwindow:new(window2, render_lib)
 	instance:add_root_window(root_window2)
 
-	local vbox1 = vbox:new(5, false)
+	local vbox1 = vbox:new(0, false)
 	window2:add_widget(vbox1)
 
-	local calendar = update.calendar:new()
- 	local calendar_widget = calendar:build_calendar(main_style)
-	register_updater(instance, root_window2, calendar, 1)
-    vbox1:add_widget(calendar_widget, true, false) 
+	local mpris = update.mpris:new()
+	mpris.label_artist = label:new('')
+	mpris.label_title = label:new('')
+	mpris.label_genre = label:new('')
+	mpris.label_album = label:new('')
+	mpris_updater = luaupdatempris:new(instance, root_window2, mpris.callback, mpris, 'xmms2')
 
+    local hbox1 = hbox:new(5, false)
+    vbox1:add_widget(hbox1, true, false)
+
+	hbox1:add_widget(mpris.label_artist, true, false)
+	hbox1:add_widget(label:new('-'), true, false)
+	hbox1:add_widget(mpris.label_title, true, false)
+
+	vbox1:add_widget(mpris.label_genre, true, false)
+	vbox1:add_widget(mpris.label_album, true, false)
 
 	vbox1:add_widget(separator:new(true), true, false)
 
@@ -99,7 +112,6 @@ sysmony.build = function (instance)
 	cpuinfo.label_cpuinfo = label:new('')
 	register_updater(instance, root_window1, cpuinfo, 5)
 	
-	
 	local network = update.network:new('eth0')
 	network.label_upload = label:new('')
 	network.label_download = label:new('')
@@ -109,7 +121,7 @@ sysmony.build = function (instance)
 	network.graph_upload_speed:logarithmic_scale(0.01, 10)
 	network.graph_download_speed = graph:new(1, 5 * 1024, 60)
 	network.graph_download_speed:logarithmic_scale(0.01, 10)
-	register_updater(instance, root_window1, network, 1)
+	register_updater(instance, root_window1, network, 1.5)
 	
 	local memory = update.memory:new()
 	memory.label_free_memory_percent = label:new('')

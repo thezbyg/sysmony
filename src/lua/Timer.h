@@ -16,64 +16,20 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROOT_WINDOW_H_
-#define ROOT_WINDOW_H_
+#ifndef LUA_TIMER_H_
+#define LUA_TIMER_H_
 
-#include "Update.h"
-#include "layout/Window.h"
-#include "engine_api/Render.h"
-#include "layout/Rect2.h"
+#include "Time.h"
 
-#include <glib.h>
-#include <gdk/gdk.h>
+extern "C"{
+#include <lua.h>
+}
 
-#include <list>
-#include <map>
-#include <memory>
+namespace lua{
 
+int luaopen_timer(lua_State *L);
 
-class RootWindow{
-protected:
-	GdkWindow *gdk_window;
-	std::shared_ptr<layout::Window> window;
-	std::list<std::shared_ptr<Update> > updates;
-	std::shared_ptr<engine::Render> render;
+}
 
-	GCond *condition;
-	GMutex *mutex;
-	GThread *worker_thread;
-	bool worker_finish;
-
-	void invalidate();
-public:
-	
-	RootWindow(std::shared_ptr<layout::Window> window, std::shared_ptr<engine::Render> render_lib);
-	~RootWindow();
-
-	void draw(layout::Rect2<double> &rect, cairo_t *cr);
-
-	void show();
-
-	void addUpdater(std::shared_ptr<Update> update);
-
-	void startUpdateThread();
-	void finishUpdateThread();
-	
-	void lockUpdates();
-	void unlockUpdates();
-
-	void updateThread();
-
-	struct RedrawData{
-		GdkWindow *window;
-		GdkRectangle rectangle;
-	};
-
-	static gpointer update_worker_thread(RootWindow *root_window);
-	static gboolean redraw_rectangle(struct RedrawData *redraw);
-
-	friend class Instance;
-};
-
-#endif /* ROOT_WINDOW_H_ */
+#endif /* LUA_TIMER_H_ */
 

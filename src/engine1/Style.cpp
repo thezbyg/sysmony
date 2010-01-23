@@ -304,7 +304,7 @@ shared_ptr<RenderStyle> lua_checkrenderstyle(lua_State *L, int index){
 
 int lua_pushrenderstyle(lua_State *L, shared_ptr<RenderStyle> renderstyle_){
 	void *dataptr = lua_newuserdata(L, sizeof(shared_ptr<RenderStyle>));
-	shared_ptr<RenderStyle> *renderstyle = new(dataptr) shared_ptr<RenderStyle>(renderstyle_); 
+	/*shared_ptr<RenderStyle> *renderstyle = */new(dataptr) shared_ptr<RenderStyle>(renderstyle_); 
 	luaL_getmetatable(L, "renderstyle");
 	lua_setmetatable(L, -2);
 	return 1;

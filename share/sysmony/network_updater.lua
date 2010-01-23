@@ -33,6 +33,8 @@ update.network = {
 		n.prev_upload_lp = 0
 
 		n.interface = interface or "eth0"
+		
+		n.last_update = timer:now()
 		return n
 	end,
      
@@ -49,18 +51,22 @@ update.network = {
 			
 			local interface, download, upload = string.match(line, "([%a%d]+):%s*(%d+)%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+(%d+)%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+")
 			if interface == self.interface then
+				local now = timer:now()
+				local seconds = 1 / (self.last_update:difference(now) * 0.001)
+				self.last_update = now
+				
 				if self.label_upload then self.label_upload:text(format_size(tonumber(upload))) end
 				if self.label_download then self.label_download:text(format_size(tonumber(download))) end
 
                 if self.prev_upload then
-					self.prev_upload_lp = self.prev_upload_lp + 0.3 * (tonumber(upload) - self.prev_upload - self.prev_upload_lp)
+					self.prev_upload_lp = self.prev_upload_lp + 0.3 * ((tonumber(upload) - self.prev_upload) * seconds - self.prev_upload_lp)
                 
 					if self.graph_upload_speed then                	
 						self.graph_upload_speed:push_value(self.prev_upload_lp / 1024)
 					end
 				end
 				if self.prev_download then
-					self.prev_download_lp = self.prev_download_lp + 0.3 * (tonumber(download) - self.prev_download - self.prev_download_lp)
+					self.prev_download_lp = self.prev_download_lp + 0.3 * ((tonumber(download) - self.prev_download) * seconds - self.prev_download_lp)
 					
 					if self.graph_download_speed then
 						self.graph_download_speed:push_value(self.prev_download_lp / 1024)
@@ -70,7 +76,7 @@ update.network = {
 				if self.label_upload_speed then self.label_upload_speed:text(format_speed(tonumber(self.prev_upload_lp), 's')) end
 				if self.label_download_speed then self.label_download_speed:text(format_speed(tonumber(self.prev_download_lp), 's')) end
 
-				self.prev_upload = tonumber(upload)
+				self.prev_upload = tonumber(upload) 
 				self.prev_download = tonumber(download)
 			end
 		end		

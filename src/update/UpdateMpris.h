@@ -16,64 +16,46 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef ROOT_WINDOW_H_
-#define ROOT_WINDOW_H_
+#ifndef UPDATE_MPRIS_H_
+#define UPDATE_MPRIS_H_
 
-#include "Update.h"
-#include "layout/Window.h"
-#include "engine_api/Render.h"
-#include "layout/Rect2.h"
+#include "../Update.h"
 
-#include <glib.h>
-#include <gdk/gdk.h>
+#include <dbus/dbus.h>
+#include <dbus/dbus-glib.h>
 
-#include <list>
-#include <map>
-#include <memory>
+#include <stdint.h>
+#include <stdbool.h>
 
+#include <string>
 
-class RootWindow{
+class UpdateMpris:public Update{
 protected:
-	GdkWindow *gdk_window;
-	std::shared_ptr<layout::Window> window;
-	std::list<std::shared_ptr<Update> > updates;
-	std::shared_ptr<engine::Render> render;
+    GStaticRecMutex data_mutex;
+	DBusGProxy *player;
 
-	GCond *condition;
-	GMutex *mutex;
-	GThread *worker_thread;
-	bool worker_finish;
+	std::string artist;
+	std::string album;
+	std::string genre;
+	std::string title;
 
-	void invalidate();
+	int32_t status[4];
 public:
-	
-	RootWindow(std::shared_ptr<layout::Window> window, std::shared_ptr<engine::Render> render_lib);
-	~RootWindow();
+	UpdateMpris(Instance *instance, RootWindow *root_window, const char* player_name);
+	virtual ~UpdateMpris();
 
-	void draw(layout::Rect2<double> &rect, cairo_t *cr);
+	virtual bool ready(uint32_t now);
+	virtual void update(uint32_t now);
+	virtual uint32_t getSleepTime(uint32_t now);
 
-	void show();
+    void lock();
+	void unlock();
 
-	void addUpdater(std::shared_ptr<Update> update);
-
-	void startUpdateThread();
-	void finishUpdateThread();
-	
-	void lockUpdates();
-	void unlockUpdates();
-
-	void updateThread();
-
-	struct RedrawData{
-		GdkWindow *window;
-		GdkRectangle rectangle;
-	};
-
-	static gpointer update_worker_thread(RootWindow *root_window);
-	static gboolean redraw_rectangle(struct RedrawData *redraw);
-
-	friend class Instance;
+	static void status_cb(DBusGProxy *player_proxy, GValueArray *status, UpdateMpris *mpris);
+	static void track_cb(DBusGProxy *player_proxy, GHashTable *table, UpdateMpris *mpris);
 };
 
-#endif /* ROOT_WINDOW_H_ */
+
+#endif /* UPDATE_MPRIS_H_ */
+
 
