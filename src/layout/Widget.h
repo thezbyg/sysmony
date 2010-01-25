@@ -51,6 +51,7 @@ protected:
 
 	Vector2<double> requisition;
 	Rect2<double> allocation;
+    Rect2<double> previous_allocation;
 	Vector2<double> min_requisition;
 
 	uint64_t style_mask[1];
@@ -78,6 +79,13 @@ public:
 	void addStyle(std::shared_ptr<engine::Style> style);
 	void setStyleMask(uint64_t style_mask);
 	void applyStyles();
+
+    void setVisible(bool visible);
+	const bool getVisible() const;
+
+    void invalidateRect(const Rect2<double>& rect);
+    void invalidateLocalRect(const Rect2<double>& rect);
+    virtual void transformRect(Rect2<double>& rect);
 
 	std::shared_ptr<engine::Style> getCurrentStyle();
 

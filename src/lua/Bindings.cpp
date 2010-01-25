@@ -26,6 +26,7 @@
 #include "layout/Image.h"
 #include "layout/Table.h"
 #include "layout/Graph.h"
+#include "layout/Transform.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -110,10 +111,24 @@ static int lua_min_size(lua_State *L){
 	return 0;
 }
 
+static int lua_visible(lua_State *L){
+	shared_ptr<Widget> widget = lua_checkwidget(L, 1);
+	if ((lua_type(L, 2) == LUA_TBOOLEAN)){
+		widget->setVisible(lua_toboolean(L, 2));
+		return 0;
+	}else{
+		lua_pushboolean(L, widget->getVisible());
+		return 1;
+	}
+	return 0;
+}
+ 
+
 static const struct luaL_reg lua_widget_m[] = {
 	{"add_style", lua_add_style},
 	{"set_style_mask", lua_set_style_mask},
 	{"min_size", lua_min_size},
+	{"visible", lua_visible},
 	{NULL, NULL}
 };
 
@@ -754,6 +769,91 @@ static int luaopen_sm_table(lua_State *L){
 
 
 
+static int lua_newtransform(lua_State *L){
+	void *dataptr = lua_newuserdata(L, sizeof(shared_ptr<Transform>));
+	new(dataptr) shared_ptr<Transform>(new Transform());
+	luaL_getmetatable(L, "transform");
+	lua_setmetatable(L, -2);
+	return 1;
+}
+
+shared_ptr<Transform> lua_checktransform(lua_State *L, int index){
+	void *dataptr;
+	if ((dataptr = sm_lua_getuserdata(L, index, "transform"))){
+		return *reinterpret_cast<shared_ptr<Transform>*>(dataptr);
+	}
+	luaL_argcheck(L, false, index, "`transform' expected");
+	return shared_ptr<Transform>();
+}
+
+int lua_pushtransform(lua_State *L, shared_ptr<Transform> transform_){
+	void *dataptr = lua_newuserdata(L, sizeof(shared_ptr<Transform>));
+	new(dataptr) shared_ptr<Transform>(transform_);
+	luaL_getmetatable(L, "transform");
+	lua_setmetatable(L, -2);
+	return 1;
+}
+
+static int lua_transform_gc(lua_State *L){
+	void *dataptr= luaL_checkudata(L, 1, "transform");
+	reinterpret_cast<shared_ptr<Transform>*>(dataptr)->~shared_ptr();;
+	return 0;
+}
+
+static const struct luaL_reg lua_transform_f[] = {
+	{"new", lua_newtransform},
+	{NULL, NULL}
+};
+
+
+static int transform_scale(lua_State *L){
+    shared_ptr<Transform> transform = lua_checktransform(L, 1);
+    transform->scale(lua_tonumber(L, 2), lua_tonumber(L, 3));
+    return 0;
+}
+
+static int transform_rotate(lua_State *L){
+    shared_ptr<Transform> transform = lua_checktransform(L, 1);
+    transform->rotate(lua_tonumber(L, 2));
+    return 0;
+}
+
+static const struct luaL_reg lua_transform_m[] = {
+    {"scale", transform_scale},
+    {"rotate", transform_rotate},
+    {NULL, NULL}
+};
+
+static int luaopen_transform(lua_State *L){
+	luaL_newmetatable(L, "transform");
+
+	lua_pushstring(L, "__index");
+	lua_pushvalue(L, -2);
+	lua_settable(L, -3);
+
+	lua_pushstring(L, "__gc");
+	lua_pushcfunction(L, lua_transform_gc);
+	lua_settable(L, -3);
+
+	const char *derived_from[] = {"widget", "container", "transform", 0};
+	sm_lua_add_derivation_info(L, derived_from);
+
+	luaL_register(L, NULL, lua_widget_m);
+	luaL_register(L, NULL, lua_container_m);
+	luaL_register(L, NULL, lua_transform_m);
+	luaL_register(L, "transform", lua_transform_f);
+	
+	lua_pop(L, 2);
+
+	return 1;
+}
+
+
+
+
+
+
+
 
 static int lua_newbox(lua_State *L){
 
@@ -1185,6 +1285,7 @@ int luaopen_all_bindingswindow(lua_State *L){
 	luaopen_image(L);
 	luaopen_graph(L);
 	luaopen_sm_table(L);
+	luaopen_transform(L);
 	return 0;
 }
 

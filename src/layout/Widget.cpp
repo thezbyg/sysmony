@@ -36,6 +36,7 @@ Widget::Widget(){
 	allocated = false;
 	dirty = true;
 	style_built = false;
+    visible = true;
 
 	parent = 0;
 	style_mask[0] = 0;
@@ -61,7 +62,8 @@ const Rect2<double>& Widget::getAllocation() const{
 }
 
 void Widget::setAllocation(const Rect2<double>& allocation_){
-	allocation = allocation_;
+	previous_allocation = allocation;
+    allocation = allocation_;
 }
 
 const Vector2<double>& Widget::getRequisition() const{
@@ -151,7 +153,7 @@ void Widget::setStyleMask(uint64_t style_mask_){
 
 		Window* window;
 		if ((window = getTopLevelWindow())){
-			window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, allocation.getSize())));
+			invalidateRect(allocation.getSize());
 			window->queueEventOnce(shared_ptr<EventRequestReallocation>(new EventRequestReallocation(this)));
 		}
 	}
@@ -195,5 +197,59 @@ void Widget::applyStyles(){
 	style_built = true;
 }
 
+
+void Widget::setVisible(bool visible_){
+	if (visible != visible_){
+		visible = visible_;
+
+        Window* window;
+		if ((window = getTopLevelWindow())){
+			window->queueEventOnce(shared_ptr<EventRequestReallocation>(new EventRequestReallocation(this)));
+		}
+	}
+}
+
+const bool Widget::getVisible() const{
+	return visible;	
+}
+ 
+void Widget::invalidateRect(const Rect2<double>& rect){
+    Rect2<double> toprect = rect;
+    Widget *widget = this, *p;
+    widget->transformRect(toprect);
+
+    while ((p = widget->getParent())){
+        p->transformRect(toprect);
+        widget = p;
+    }
+    if (!toprect.isEmpty()){
+        try{
+            dynamic_cast<Window*>(widget)->addInvalidated(toprect);
+        }catch(...){
+        
+        }
+    }
+}
+
+void Widget::invalidateLocalRect(const Rect2<double>& rect){
+    Rect2<double> toprect = rect;
+    Widget *widget = this, *p;
+    while ((p = widget->getParent())){
+        p->transformRect(toprect);
+        widget = p;
+    }
+    if (!toprect.isEmpty()){
+        try{
+            dynamic_cast<Window*>(widget)->addInvalidated(toprect);
+        }catch(...){
+        
+        }
+    }
+}
+
+void Widget::transformRect(Rect2<double>& rect){
+    rect.x += allocation.x;
+    rect.y += allocation.y;
+}
 
 }

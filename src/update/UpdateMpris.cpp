@@ -55,6 +55,7 @@ UpdateMpris::UpdateMpris(Instance *instance_, RootWindow *root_window_, const ch
 	}else{
         cerr << error->message << endl;
 		g_error_free(error);
+		error = NULL;
 	}
 	if (status) g_value_array_free(status);
 
@@ -64,6 +65,7 @@ UpdateMpris::UpdateMpris(Instance *instance_, RootWindow *root_window_, const ch
 	}else{
         cerr << error->message << endl;
 		g_error_free(error);
+		error = NULL;
 	}
 	if (table) g_hash_table_destroy(table);
 

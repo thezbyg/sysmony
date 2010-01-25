@@ -43,20 +43,23 @@ void Hbox::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_context
 	Rect2<double> child_allocation, child_invalidated_rect;
 
 	for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++){
+	    if ((*i)->getVisible()){
+					
+			child_allocation = (*i)->getAllocation();
 
-		child_allocation = (*i)->getAllocation();
+			if (invalidated_rect.isIntersecting(child_allocation)){
+				child_invalidated_rect = invalidated_rect;
+				child_invalidated_rect.x -= child_allocation.x;
+				child_invalidated_rect.y -= child_allocation.y;
 
-		if (invalidated_rect.isIntersecting(child_allocation)){
-			child_invalidated_rect = invalidated_rect;
-			child_invalidated_rect.x -= child_allocation.x;
-			child_invalidated_rect.y -= child_allocation.y;
+				cairo_save(cr);
+				cairo_translate(cr, child_allocation.x, child_allocation.y);
 
-			cairo_save(cr);
-			cairo_translate(cr, child_allocation.x, child_allocation.y);
+				(*i)->draw(child_invalidated_rect, draw_context);
 
-			(*i)->draw(child_invalidated_rect, draw_context);
+				cairo_restore(cr);
+			}
 
-			cairo_restore(cr);
 		}
 	}
 
@@ -69,30 +72,36 @@ void Hbox::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_context
 void Hbox::allocate(){
 	if (allocated) return;
 
+	Rect2<double> new_allocation, old_allocation;
+	
 	Vector2<double> child_requisition;
 	Vector2<double> max_child_requisition;
 	Rect2<double> child_allocation;
 
 	double width = 0;
 
-	uint32_t n_widgets = widgets.size();
-	if (n_widgets>=1){
+	Window* window = getTopLevelWindow();
+	
+	uint32_t n_widgets = 0;
+	uint32_t n_expanded = 0;
+	uint32_t n_i = 0;
 
-		width = (n_widgets-1) * spacing;
-
-		uint32_t n_expanded = 0;
-
-		uint32_t n_i = 0;
-		for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++, n_i++){
-
+	for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++, n_i++){
+		if ((*i)->getVisible()){
 			child_requisition = (*i)->getRequisition();
 
 			max_child_requisition.max(child_requisition);
 
-			width += child_requisition.x;
+			width += child_requisition.x + spacing;
 
 			if (expand[n_i]) n_expanded++;
+			n_widgets++;
 		}
+	}
+	
+	if (n_widgets>=1){
+
+		width -= spacing;
 
 		if (homogeneous){
 			width = (spacing + max_child_requisition.x) * n_widgets - spacing;
@@ -108,35 +117,45 @@ void Hbox::allocate(){
 
 		n_i = 0;
 		for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++, n_i++){
+	    	if ((*i)->getVisible()){
 
-			child_requisition = (*i)->getRequisition();
-			if (homogeneous){
-				child_requisition.x = max_child_requisition.x;
+				child_requisition = (*i)->getRequisition();
+				if (homogeneous){
+					child_requisition.x = max_child_requisition.x;
+				}
+
+				if (expand[n_i]){
+					child_allocation.width = child_requisition.x + extra_expanded_width;
+				}else{
+					child_allocation.width = child_requisition.x;
+				}
+
+				if (fill[n_i]){
+					child_allocation.height = allocation.height - padding.y * 2;
+				}else{
+					child_allocation.height = child_requisition.y;
+				}
+
+				old_allocation = (*i)->getAllocation();
+
+				if (old_allocation != child_allocation){
+					old_allocation += child_allocation;
+
+					invalidateRect(old_allocation);
+				}
+ 
+				(*i)->setAllocation(child_allocation);
+				(*i)->allocate();
+
+				child_allocation.x += child_allocation.width + spacing;
 			}
-
-			if (expand[n_i]){
-				child_allocation.width = child_requisition.x + extra_expanded_width;
-			}else{
-				child_allocation.width = child_requisition.x;
-			}
-
-			if (fill[n_i]){
-				child_allocation.height = allocation.height - padding.y * 2;
-			}else{
-				child_allocation.height = child_requisition.y;
-			}
-
-			(*i)->setAllocation(child_allocation);
-			(*i)->allocate();
-
-			child_allocation.x += child_allocation.width + spacing;
-
 		}
 
 	}
 
-	allocated = true;
-
+    if (dirty) invalidateLocalRect(previous_allocation);
+	
+    allocated = true;
 }
 
 void Hbox::configure(){
@@ -149,19 +168,22 @@ void Hbox::configure(){
 
 	double width = 0;
 
-	uint32_t n_widgets = widgets.size();
-	if (n_widgets>=1){
+	uint32_t n_widgets = 0;
 
-		width = (n_widgets-1) * spacing;
-
-		for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++){
+	for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++){
+		if ((*i)->getVisible()){
 			(*i)->configure();
 			child_requisition = (*i)->getRequisition();
 
 			max_child_requisition.max(child_requisition);
 
-			width += child_requisition.x;
+			width += child_requisition.x + spacing;
+			n_widgets++;
 		}
+	}
+
+	if (n_widgets>=1){
+		width -= spacing;
 
 		if (homogeneous){
 			width = (spacing + max_child_requisition.x) * n_widgets - spacing;
@@ -170,10 +192,12 @@ void Hbox::configure(){
 
 	Vector2<double> new_size(width, max_child_requisition.y);
 	new_size += padding * 2;
-
-	setRequisition(new_size);
-	allocated = false;
-
+    if (new_size != requisition){
+	    setRequisition(new_size);
+        markDirty();
+    }
+	
+    allocated = false;
 	configured = true;
 }
 

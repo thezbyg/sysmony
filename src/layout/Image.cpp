@@ -94,7 +94,7 @@ void Image::setImageFilename(const char* filename_){
 		Window* window = getTopLevelWindow();
 
 		if (window){
-			window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, allocation.getSize())));
+			invalidateRect(allocation.getSize());
 			window->queueEventOnce(shared_ptr<EventRequestReallocation>(new EventRequestReallocation(this)));
 		}
 
@@ -106,11 +106,7 @@ void Image::setImageFilename(const char* filename_){
 void Image::setImageAsMask(bool image_as_mask_){
 	if (image_as_mask != image_as_mask_){
     	image_as_mask = image_as_mask_;
-		
-		Window* window = getTopLevelWindow();
-		if (window){
-			window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, allocation.getSize())));
-		}
+        invalidateRect(allocation.getSize());
 	}	
 }
 

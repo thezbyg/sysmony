@@ -83,7 +83,7 @@ bool EventConfigure::operator==(const Event& event) const{
 
 
 
-EventInvalidateRect::EventInvalidateRect(Widget *target_widget_, const Rect2<double> &rectangle_){
+/*EventInvalidateRect::EventInvalidateRect(Widget *target_widget_, const Rect2<double> &rectangle_){
 	target_widget = target_widget_;
 	rectangle = rectangle_;
 }
@@ -110,7 +110,7 @@ void EventInvalidateRect::process(Window *window){
 
 	dynamic_cast<Window*>(top_level)->addInvalidated(toplevel_rect);
 }
-
+  */
 
 
 }

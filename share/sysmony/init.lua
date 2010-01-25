@@ -55,36 +55,36 @@ sysmony.build = function (instance)
 
 
     local window2 = window:new()
-    window2:resize(400, 250)
+    window2:resize(300, 100)
 	window2:padding(10, 10)
 	window2:add_style(main_style)
 	window2:set_position(screen_size.width - 420 - 270, 20)
     local root_window2 = rootwindow:new(window2, render_lib)
 	instance:add_root_window(root_window2)
 
-	local vbox1 = vbox:new(0, false)
-	window2:add_widget(vbox1)
+    local vbox1 = vbox:new(5, false)
+    window2:add_widget(vbox1)
+	
+    local vbox2 = vbox:new(0, false)
+    vbox1:add_widget(vbox2, true, false)
 
-	local mpris = update.mpris:new()
+    local mpris = update.mpris:new()
 	mpris.label_artist = label:new('')
 	mpris.label_title = label:new('')
 	mpris.label_genre = label:new('')
 	mpris.label_album = label:new('')
 	mpris_updater = luaupdatempris:new(instance, root_window2, mpris.callback, mpris, 'xmms2')
 
-    local hbox1 = hbox:new(5, false)
-    vbox1:add_widget(hbox1, true, false)
+	mpris.container = vbox2
 
-	hbox1:add_widget(mpris.label_artist, true, false)
-	hbox1:add_widget(label:new('-'), true, false)
-	hbox1:add_widget(mpris.label_title, true, false)
-
-	vbox1:add_widget(mpris.label_genre, true, false)
-	vbox1:add_widget(mpris.label_album, true, false)
+    vbox2:add_widget(label:new('Playing:'), false, false)
+	vbox2:add_widget(mpris.label_artist, false, false)
+	vbox2:add_widget(mpris.label_title, false, false)
+	vbox2:add_widget(mpris.label_album, false, false)
 
 	vbox1:add_widget(separator:new(true), true, false)
 
-
+ 
 	local vbox1 = vbox:new(5, false)
 	window1:add_widget(vbox1)
 	

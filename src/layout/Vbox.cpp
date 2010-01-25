@@ -34,7 +34,7 @@ Vbox::~Vbox(){
 
 }
 
-void Vbox::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_context ){
+void Vbox::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_context){
 
 	if (current_style) current_style->predraw(this, draw_context);
 
@@ -43,20 +43,22 @@ void Vbox::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_context
 	Rect2<double> child_allocation, child_invalidated_rect;
 
 	for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++){
+	    if ((*i)->getVisible()){
 
-		child_allocation = (*i)->getAllocation();
+			child_allocation = (*i)->getAllocation();
 
-		if (invalidated_rect.isIntersecting(child_allocation)){
-			child_invalidated_rect = invalidated_rect;
-			child_invalidated_rect.x -= child_allocation.x;
-			child_invalidated_rect.y -= child_allocation.y;
+			if (invalidated_rect.isIntersecting(child_allocation)){
+				child_invalidated_rect = invalidated_rect;
+				child_invalidated_rect.x -= child_allocation.x;
+				child_invalidated_rect.y -= child_allocation.y;
 
-			cairo_save(cr);
-			cairo_translate(cr, child_allocation.x, child_allocation.y);
+				cairo_save(cr);
+				cairo_translate(cr, child_allocation.x, child_allocation.y);
 
-			(*i)->draw(child_invalidated_rect, draw_context);
+				(*i)->draw(child_invalidated_rect, draw_context);
 
-			cairo_restore(cr);
+				cairo_restore(cr);
+			}
 		}
 	}
 
@@ -76,26 +78,26 @@ void Vbox::allocate(){
 
 	double height = 0;
 
-	Window* window = getTopLevelWindow();
-
-	uint32_t n_widgets = widgets.size();
-	if (n_widgets>=1){
-
-		height = (n_widgets-1) * spacing;
-
-		uint32_t n_expanded = 0;
-
-		uint32_t n_i = 0;
-		for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++, n_i++){
-			//(*i)->configure();
+	uint32_t n_widgets = 0;
+	uint32_t n_expanded = 0;
+	uint32_t n_i = 0;
+	for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++, n_i++){
+	    if ((*i)->getVisible()){
+		
 			child_requisition = (*i)->getRequisition();
 
 			max_child_requisition.max(child_requisition);
 
-			height += child_requisition.y;
+			height += child_requisition.y + spacing;
 
 			if (expand[n_i]) n_expanded++;
+			n_widgets++;
 		}
+	}
+
+	if (n_widgets>=1){
+
+		height -= spacing;
 
 		if (homogeneous){
 			height = (spacing + max_child_requisition.y) * n_widgets - spacing;
@@ -111,40 +113,43 @@ void Vbox::allocate(){
 
 		n_i = 0;
 		for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++, n_i++){
+	    	if ((*i)->getVisible()){
 
-			child_requisition = (*i)->getRequisition();
-			if (homogeneous){
-				child_requisition.y = max_child_requisition.y;
+				child_requisition = (*i)->getRequisition();
+				if (homogeneous){
+					child_requisition.y = max_child_requisition.y;
+				}
+
+				if (expand[n_i]){
+					child_allocation.height = child_requisition.y + extra_expanded_height;
+				}else{
+					child_allocation.height = child_requisition.y;
+				}
+
+				if (fill[n_i]){
+					child_allocation.width = allocation.width - padding.x * 2;
+				}else{
+					child_allocation.width = child_requisition.x;
+				}
+
+				old_allocation = (*i)->getAllocation();
+
+				if (old_allocation != child_allocation){
+					old_allocation += child_allocation;
+
+					invalidateRect(old_allocation);
+				}
+
+				(*i)->setAllocation(child_allocation);
+				(*i)->allocate();
+
+				child_allocation.y += child_allocation.height + spacing;
+
 			}
-
-			if (expand[n_i]){
-				child_allocation.height = child_requisition.y + extra_expanded_height;
-			}else{
-				child_allocation.height = child_requisition.y;
-			}
-
-			if (fill[n_i]){
-				child_allocation.width = allocation.width - padding.x * 2;
-			}else{
-				child_allocation.width = child_requisition.x;
-			}
-
-			old_allocation = (*i)->getAllocation();
-
-			if (old_allocation != child_allocation){
-				old_allocation += child_allocation;
-
-				if (window) window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, old_allocation)));
-			}
-
-			(*i)->setAllocation(child_allocation);
-			(*i)->allocate();
-
-			child_allocation.y += child_allocation.height + spacing;
-
 		}
-
 	}
+
+    if (dirty) invalidateLocalRect(previous_allocation);
 
 	allocated = true;
 
@@ -159,31 +164,34 @@ void Vbox::configure(){
 	Rect2<double> child_allocation;
 
 	double height = 0;
+	uint32_t n_widgets = 0;
 
-	uint32_t n_widgets = widgets.size();
-	if (n_widgets>=1){
+	for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++){
+	    if ((*i)->getVisible()){
 
-		height = (n_widgets-1) * spacing;
-
-		for (list<shared_ptr<Widget> >::iterator i = widgets.begin(); i != widgets.end(); i++){
 			(*i)->configure();
 			child_requisition = (*i)->getRequisition();
 
 			max_child_requisition.max(child_requisition);
 
-			height += child_requisition.y;
+			height += child_requisition.y + spacing;
+			n_widgets++;
 		}
-
+	}
+	if (n_widgets>=1){
+		height -= spacing;
 		if (homogeneous){
 			height = (spacing + max_child_requisition.y) * n_widgets - spacing;
 		}
-
 	}
 
 	Vector2<double> new_size(max_child_requisition.x, height);
 	new_size += padding * 2;
 
-	setRequisition(new_size);
+    if (requisition != new_size){
+	    setRequisition(new_size);
+        markDirty();
+    }
 
 	configured = true;
 }

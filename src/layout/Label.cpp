@@ -144,7 +144,7 @@ void Label::setText(const char* text_){
 
 		dirty = true;
 		if (window){
-			window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, allocation.getSize())));
+			invalidateRect(allocation.getSize());
 			window->queueEventOnce(shared_ptr<EventRequestReallocation>(new EventRequestReallocation(this)));
 		}
 		configured = false;
@@ -158,11 +158,7 @@ const Label::Align Label::getAlignment() const{
 void Label::setAlignment(const Align alignment){
 	if (align != alignment){
     	align = alignment;	
-
-        Window* window = getTopLevelWindow();
-		if (window){
-			window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, allocation.getSize())));
-		} 
+		invalidateRect(allocation.getSize());
 	}
 }
 

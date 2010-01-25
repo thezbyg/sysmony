@@ -14,24 +14,25 @@ from SCons.Script.SConscript import SConsEnvironment
 import SCons.Script.SConscript
 import SCons.SConf
 import SCons.Conftest
+from scons_tools.colors import *
 
 
 def CheckPKG(context, name):
-	context.Message( 'Checking for %s... ' % name )
+	context.Message(Colors.COMPILE + 'Checking for ' + Colors.TARGET + name + '... ' + Colors.END )
 	ret = context.TryAction('pkg-config --exists "%s"' % name)[0]
 	context.Result( ret )
 	return ret
 	
-def ConfirmLibs(env, libs):
+def ConfirmLibs(env, libs, headers):
 
-	conf = Configure(env, custom_tests = { 'CheckPKG' : CheckPKG })
+	conf = Configure(env, custom_tests = { 'CheckPKG' : CheckPKG, 'CheckHeader' : CheckHeader})
 
 	failed = False
 	for evar, args in libs.iteritems():
 		found = False
 		for name, version in args['checks'].iteritems():
 			if conf.CheckPKG(name + ' ' + version):
-				env[evar]=name
+				env[evar] = name
 				found = True;
 				break
 		if not found:
@@ -40,6 +41,24 @@ def ConfirmLibs(env, libs):
 					failed = True
 			else:
 				failed = True
+
+
+	for evar, args in headers.iteritems():
+		found = False
+		for name, version in args['header'].iteritems():
+			path = conf.CheckHeader(name, args['dirs'])
+			if path:
+				env[evar] = path
+				found = True;
+				break
+		if not found:
+			if 'required' in args:
+				if not args['required']==False:
+					failed = True
+			else:
+				failed = True
+ 
+
 	if failed:
 		exit(1)
 
@@ -106,4 +125,14 @@ def Glob(path):
 		else:
 			files.append(str(f));
 	return files
+
+
+def CheckHeader(conf, header_name, check_paths):
+	conf.Message(Colors.COMPILE + 'Checking for header ' + Colors.TARGET + header_name + '... ' + Colors.END)
+	for path in check_paths:
+		if os.path.isfile(os.path.join(path, header_name)):
+			conf.Result('yes')
+			return path
+	conf.Result('no')
+	return None
 

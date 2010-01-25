@@ -56,9 +56,9 @@ static void clear_rect(cairo_t *cr, Rect2<double> &cliprect){
 
 #ifndef NDEBUG
 	
-	/*cairo_rectangle(cr, cliprect.x, cliprect.y, cliprect.width, cliprect.height);
+	cairo_rectangle(cr, cliprect.x, cliprect.y, cliprect.width, cliprect.height);
 	cairo_set_source_rgba(cr, (rand()%100)/100.0, (rand()%133)/133.0, (rand()%214)/214.0, 1);
-	cairo_stroke(cr);*/
+	cairo_stroke(cr);
 	
 #endif
 

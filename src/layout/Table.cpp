@@ -360,8 +360,6 @@ void Table::allocate(){
 		}
 	}
 
-	Window* window = getTopLevelWindow();
-
 	for (list<shared_ptr<Flags> >::iterator i = widgets.begin(); i != widgets.end(); i++){
 		child_requisition = (*i)->widget->getRequisition();
 
@@ -396,7 +394,7 @@ void Table::allocate(){
 		if (old_allocation != child_allocation){
 			old_allocation += child_allocation;
 
-			if (window) window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, old_allocation)));
+			invalidateRect(old_allocation);
 		}
 
 		(*i)->widget->setAllocation(child_allocation);

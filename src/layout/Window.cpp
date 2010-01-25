@@ -51,20 +51,21 @@ void Window::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_conte
 
 	list<shared_ptr<Widget> >::iterator i = widgets.begin();
 	if (i != widgets.end()){
+        if ((*i)->getVisible()){
+			child_allocation = (*i)->getAllocation();
 
-		child_allocation = (*i)->getAllocation();
+			if (invalidated_rect.isIntersecting(child_allocation)){
+				child_invalidated_rect = invalidated_rect;
+				child_invalidated_rect.x -= child_allocation.x;
+				child_invalidated_rect.y -= child_allocation.y;
 
-		if (invalidated_rect.isIntersecting(child_allocation)){
-			child_invalidated_rect = invalidated_rect;
-			child_invalidated_rect.x -= child_allocation.x;
-			child_invalidated_rect.y -= child_allocation.y;
+				cairo_save(cr);
+				cairo_translate(cr, padding.x, padding.y);
 
-			cairo_save(cr);
-			cairo_translate(cr, padding.x, padding.y);
+				(*i)->draw(child_invalidated_rect, draw_context);
 
-			(*i)->draw(child_invalidated_rect, draw_context);
-
-			cairo_restore(cr);
+				cairo_restore(cr);
+			}
 		}
 	}
 
@@ -81,18 +82,20 @@ void Window::allocate(){
 
 	list<shared_ptr<Widget> >::iterator i = widgets.begin();
 	if (i != widgets.end()){
-		old_allocation = (*i)->getAllocation();
+        if ((*i)->getVisible()){
+            old_allocation = (*i)->getAllocation();
 
-		if (old_allocation != new_allocation){
-			old_allocation += new_allocation;
+            if (old_allocation != new_allocation){
+                old_allocation += new_allocation;
+                invalidateRect(old_allocation);
+            }
 
-			Window* window = dynamic_cast<Window*>(getTopLevel());
-			window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, old_allocation)));
-		}
-
-		(*i)->setAllocation(new_allocation);
-		(*i)->allocate();
+            (*i)->setAllocation(new_allocation);
+            (*i)->allocate();
+        }
 	}
+
+    if (dirty) invalidateLocalRect(previous_allocation);
 
 	allocated = true;
 }
@@ -105,16 +108,18 @@ void Window::configure(){
 
 	list<shared_ptr<Widget> >::iterator i = widgets.begin();
 	if (i != widgets.end()){
-		(*i)->configure();
-		child_requisition = (*i)->getRequisition();
+        if ((*i)->getVisible()){
+		    (*i)->configure();
+	        child_requisition = (*i)->getRequisition();
+        }
 	}
 
 	child_requisition += padding * 2;
 
-	/*if (child_requisition != requisition){
+	if (child_requisition != requisition){
 		setRequisition(child_requisition);
 		dirty = true;
-	}*/
+	}
 
 	configured = true;
 }

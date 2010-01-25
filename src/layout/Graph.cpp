@@ -116,8 +116,7 @@ void Graph::configure(){
 void Graph::pushValue(double val){
 	values[position++] = val;
     if (position >= values.size()) position = 0;
-	Window* window = getTopLevelWindow();
-	if (window) window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, allocation.getSize())));
+    invalidateRect(allocation.getSize());
 }
 
 
@@ -127,8 +126,7 @@ void Graph::setLogarithmicScale(double lower_x, double upper_x){
 	scale_arg2 = max(upper_x, 0.000000001);			//same as above for upper bound 
 
 	scale = LOGARITHMIC;
-	Window* window = getTopLevelWindow();
-	if (window) window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, allocation.getSize())));
+    invalidateRect(allocation.getSize());
 }
 
 }

@@ -44,20 +44,23 @@ void Alignment::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_co
 	list<shared_ptr<Widget> >::iterator i = widgets.begin();
 	if (i != widgets.end()){
 
-		child_allocation = (*i)->getAllocation();
+		if ((*i)->getVisible()){
+			
+			child_allocation = (*i)->getAllocation();
 
-		if (invalidated_rect.isIntersecting(child_allocation)){
-			child_invalidated_rect = invalidated_rect;
-			child_invalidated_rect.x -= child_allocation.x;
-			child_invalidated_rect.y -= child_allocation.y;
+			if (invalidated_rect.isIntersecting(child_allocation)){
+				child_invalidated_rect = invalidated_rect;
+				child_invalidated_rect.x -= child_allocation.x;
+				child_invalidated_rect.y -= child_allocation.y;
 
-			cairo_save(cr);
-			cairo_translate(cr, child_allocation.x, child_allocation.y);
+				cairo_save(cr);
+				cairo_translate(cr, child_allocation.x, child_allocation.y);
 
-			(*i)->draw(child_invalidated_rect, draw_context);
+				(*i)->draw(child_invalidated_rect, draw_context);
 
-			cairo_restore(cr);
+				cairo_restore(cr);
 
+			}
 		}
 	}
 
@@ -69,31 +72,32 @@ void Alignment::draw(const Rect2<double>& invalidated_rect, DrawContext *draw_co
 void Alignment::allocate(){
 	if (allocated) return;
 
-	Window* window = getTopLevelWindow();
-
 	list<shared_ptr<Widget> >::iterator i = widgets.begin();
 	if (i != widgets.end()){
-		Rect2<double> new_allocation;
-		Rect2<double> old_allocation;
-		Vector2<double> child_requisition;
+		if ((*i)->getVisible()){
+			
+			Rect2<double> new_allocation;
+			Rect2<double> old_allocation;
+			Vector2<double> child_requisition;
 
-		old_allocation = (*i)->getAllocation();
+			old_allocation = (*i)->getAllocation();
 
-		child_requisition = (*i)->getRequisition();
+			child_requisition = (*i)->getRequisition();
 
-		new_allocation = Rect2<double>(
-			padding.x + (allocation.width - padding.x * 2 - child_requisition.x) * alignment.x,
-			padding.y + (allocation.height - padding.y * 2 - child_requisition.y) * alignment.y,
-			child_requisition.x,
-			child_requisition.y);
+			new_allocation = Rect2<double>(
+				padding.x + (allocation.width - padding.x * 2 - child_requisition.x) * alignment.x,
+				padding.y + (allocation.height - padding.y * 2 - child_requisition.y) * alignment.y,
+				child_requisition.x,
+				child_requisition.y);
 
-		if (old_allocation != new_allocation){
-			old_allocation += new_allocation;
+			if (old_allocation != new_allocation){
+				old_allocation += new_allocation;
 
-			if (window) window->queueEvent(shared_ptr<EventInvalidateRect>(new EventInvalidateRect(this, old_allocation)));
+				invalidateRect(old_allocation);
+			}
+			(*i)->setAllocation(new_allocation);
+			(*i)->allocate();
 		}
-		(*i)->setAllocation(new_allocation);
-		(*i)->allocate();
 	}
 
 	allocated = true;
@@ -107,8 +111,10 @@ void Alignment::configure(){
 
 	list<shared_ptr<Widget> >::iterator i = widgets.begin();
 	if (i != widgets.end()){
-		(*i)->configure();
-		child_requisition = (*i)->getRequisition();
+		if ((*i)->getVisible()){
+	   		(*i)->configure();
+			child_requisition = (*i)->getRequisition();
+		}
 	}
 
 	child_requisition += padding * 2;
@@ -123,6 +129,7 @@ void Alignment::configure(){
 
 void Alignment::setAlignment(Vector2<double> alignment_){
 	alignment = alignment_;
+    invalidateRect(allocation.getSize());
 }
 
 const Vector2<double>& Alignment::getAlignment() const{

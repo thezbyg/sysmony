@@ -27,8 +27,12 @@ if not env.GetOption('clean'):
 		'GDK_PC': 			{'checks':{'gdk-2.0':'>= 2.16.0'}},
 		'LUA_PC': 			{'checks':{'lua':'>= 5.1', 'lua5.1':'>= 5.1'}},
 		'GTHREAD_PC':		{'checks':{'gthread-2.0':'>= 2.22'}},
+		},{
+		#'EIGEN_INCLUDE_PATH':	 {'header':{'Eigen/Core':''}, 'dirs':['/usr/include/eigen2', '/usr/local/inlude/eigen2']},
+			
+			
 		})
-		
+
 if env['DEBUG']:
 	env.Append(
 		CPPFLAGS=['-Wall', '-g3', '-O0'], CFLAGS=['-Wall', '-g3', '-O0'],
@@ -39,7 +43,7 @@ else:
 		CPPFLAGS=['-Wall', '-O3'], CFLAGS=['-Wall', '-O3'],
 		)
 
-
+#env.Append(CPPPATH = env['EIGEN_INCLUDE_PATH'])
 	
 env['LIBPATH']=['.']
 

@@ -16,50 +16,35 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LAYOUT_STD_EVENTS_H_
-#define LAYOUT_STD_EVENTS_H_
+#ifndef LAYOUT_TRANSFORM_H_
+#define LAYOUT_TRANSFORM_H_
 
-#include "Event.h"
+#include "Container.h"
+
+#include <stdbool.h>
+#include <cairo/cairo.h>
 
 namespace layout {
 
-class EventRequestReallocation:public Event{
+class Transform:public Container{
 protected:
-	Widget *target_widget;
-	Widget *top_level;
+	cairo_matrix_t transform_matrix;
+    Vector2<double> offset;
 public:
-	EventRequestReallocation(Widget *target_widget);
-	virtual ~EventRequestReallocation();
+	Transform();
+	virtual ~Transform();
+    
+    void rotate(double angle);
+    void scale(double scale_x, double scale_y);
 
-	virtual void process(Window *window);
-	virtual bool operator==(const Event&) const;
+    virtual void transformRect(Rect2<double>& rect);
+
+	virtual void draw(const Rect2<double>& invalidated_rect, DrawContext *draw_context);
+	virtual void configure();
+	virtual void allocate();
 };
-
-
-/*class EventInvalidateRect:public Event{
-protected:
-	Widget *target_widget;
-	Rect2<double> rectangle;
-public:
-	EventInvalidateRect(Widget *target_widget, const Rect2<double> &rect);
-	virtual ~EventInvalidateRect();
-
-	virtual void process(Window *window);
-};*/
-
-
-class EventConfigure:public Event{
-protected:
-	Widget *target_widget;
-public:
-	EventConfigure(Widget *target_widget);
-	virtual ~EventConfigure();
-
-	virtual void process(Window *window);
-	virtual bool operator==(const Event&) const;
-};
-
 
 }
 
-#endif /*LAYOUT_STD_EVENTS_H_*/
+#endif /*LAYOUT_TRANSFORM_H_*/
+
