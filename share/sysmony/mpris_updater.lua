@@ -27,16 +27,16 @@ update.mpris = {
 	callback = function (self, data)
 		if data.status[1] == 0 or data.status[1] == 1 then
 			if self.container then self.container:visible(true) end
-       		if self.label_artist then self.label_artist:text(data.artist) end		
-    		if self.label_title then self.label_title:text(data.title) end		
-    		if self.label_genre then self.label_genre:text(data.genre) end		
-    		if self.label_album then self.label_album:text(data.album) end
+       		if self.label_artist then self.label_artist:text(util.escape(data.artist)) end
+    		if self.label_title then self.label_title:text(util.escape(data.title)) end
+    		if self.label_genre then self.label_genre:text(util.escape(data.genre)) end
+    		if self.label_album then self.label_album:text(util.escape(data.album)) end
 		else
 			if self.container then self.container:visible(false) end
-       		if self.label_artist then self.label_artist:text('') end		
-    		if self.label_title then self.label_title:text('') end		
-    		if self.label_genre then self.label_genre:text('') end		
-    		if self.label_album then self.label_album:text('') end  
+       		if self.label_artist then self.label_artist:text('') end
+    		if self.label_title then self.label_title:text('') end
+    		if self.label_genre then self.label_genre:text('') end
+    		if self.label_album then self.label_album:text('') end
 		end
 	end,
 }

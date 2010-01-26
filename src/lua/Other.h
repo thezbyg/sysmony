@@ -16,44 +16,18 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Bindings.h"
-#include "Color.h"
-#include "DateTime.h"
-#include "Instance.h"
-#include "LuaUpdate.h"
-#include "Screen.h"
-#include "Style.h"
-#include "Sysinfo.h"
-#include "Uname.h"
-#include "Timer.h"
-#include "LuaMpris.h"
-#include "Other.h"
+#ifndef LUA_OTHER_H_
+#define LUA_OTHER_H_
 
 extern "C"{
 #include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
-#include <luaconf.h>
 }
 
 namespace lua {
 
-int luaopen_all_sm_bindings(lua_State *L){
-	luaopen_all_bindingswindow(L);
-	luaopen_color(L);
-	luaopen_datetime(L);
-	luaopen_instance(L);
-	luaopen_rootwindow(L);
-	luaopen_renderlib(L);
-	luaopen_pollingluaupdate(L);
-	luaopen_screen(L);
-	luaopen_style(L);
-	luaopen_sysinfo(L);
-	luaopen_uname(L);
-	luaopen_timer(L);
-	luaopen_luaupdatempris(L);
-	luaopen_other(L);
-	return 0;
-}
+int luaopen_other(lua_State *L);
 
 }
+
+#endif /* LUA_OTHER_H_ */
+

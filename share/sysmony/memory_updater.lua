@@ -20,6 +20,8 @@ update.memory = {
         n.label_total_memory = nil
 		n.label_free_memory = nil
 		n.label_free_memory_percent = nil
+        n.label_used_memory = nil
+        n.label_used_memory_percent = nil
 		return n
 	end,
 	
@@ -41,6 +43,9 @@ update.memory = {
 		if self.label_total_memory then	self.label_total_memory:text(format_size(values['MemTotal']*1024)) end
 		if self.label_free_memory then self.label_free_memory:text(format_size((values['Buffers'] + values['Cached'] + values['MemFree'])*1024)) end
 		if self.label_free_memory_percent then self.label_free_memory_percent:text(format_percentage((values['Buffers'] + values['Cached'] + values['MemFree'])/values['MemTotal'])) end
+
+		if self.label_used_memory then self.label_used_memory:text(format_size((values['MemTotal'] - (values['Buffers'] + values['Cached'] + values['MemFree']))*1024)) end
+		if self.label_used_memory_percent then self.label_used_memory_percent:text(format_percentage(1 - (values['Buffers'] + values['Cached'] + values['MemFree'])/values['MemTotal'])) end
 	end,
 } 
 

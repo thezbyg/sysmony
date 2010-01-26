@@ -124,7 +124,7 @@ sysmony.build = function (instance)
 	register_updater(instance, root_window1, network, 1.5)
 	
 	local memory = update.memory:new()
-	memory.label_free_memory_percent = label:new('')
+	memory.label_used_memory_percent = label:new('')
 	register_updater(instance, root_window1, memory, 10)
 
 	local calendar = update.calendar:new()
@@ -164,6 +164,7 @@ sysmony.build = function (instance)
 	vbox2:add_widget(separator:new(true), true, false)
 	
 	vbox2:add_widget(label_and_value('CPU: ', cpuinfo.label_cpuinfo), true, false)
+	vbox2:add_widget(label_and_value('RAM usage: ', memory.label_used_memory_percent), true, false)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	
@@ -177,10 +178,6 @@ sysmony.build = function (instance)
 	network.graph_download_speed:min_size(1, 40)
 	vbox2:add_widget(network.graph_download_speed, true, false)
 	
-	vbox2:add_widget(separator:new(true), true, false)
-	
-	--vbox2:add_widget(label_and_value('Total Memory: ', memory.label_total_memory), true, false)
-	vbox2:add_widget(label_and_value('Free Memory: ', memory.label_free_memory_percent), true, false)
 	
 	vbox2:add_widget(separator:new(true), true, false)
 	

@@ -16,18 +16,11 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Bindings.h"
-#include "Color.h"
-#include "DateTime.h"
-#include "Instance.h"
-#include "LuaUpdate.h"
-#include "Screen.h"
-#include "Style.h"
-#include "Sysinfo.h"
-#include "Uname.h"
-#include "Timer.h"
-#include "LuaMpris.h"
 #include "Other.h"
+
+#include <glib.h>
+
+#include <stdint.h>
 
 extern "C"{
 #include <lua.h>
@@ -38,22 +31,32 @@ extern "C"{
 
 namespace lua {
 
-int luaopen_all_sm_bindings(lua_State *L){
-	luaopen_all_bindingswindow(L);
-	luaopen_color(L);
-	luaopen_datetime(L);
-	luaopen_instance(L);
-	luaopen_rootwindow(L);
-	luaopen_renderlib(L);
-	luaopen_pollingluaupdate(L);
-	luaopen_screen(L);
-	luaopen_style(L);
-	luaopen_sysinfo(L);
-	luaopen_uname(L);
-	luaopen_timer(L);
-	luaopen_luaupdatempris(L);
-	luaopen_other(L);
-	return 0;
+static int escape(lua_State *L){
+	const char *text = luaL_checkstring(L, 1);
+	char *escaped = g_markup_escape_text(text, -1);
+	lua_pushstring(L, escaped);
+	g_free(escaped);
+	return 1;
+}
+
+static const struct luaL_reg lua_other_f[] = {
+	{"escape", escape},
+	{NULL, NULL}
+};
+
+int luaopen_other(lua_State *L){
+	luaL_newmetatable(L, "util");
+
+	lua_pushstring(L, "__index");
+	lua_pushvalue(L, -2);
+	lua_settable(L, -3);
+
+	luaL_register(L, "util", lua_other_f);
+
+	lua_pop(L, 2);
+
+	return 1;
 }
 
 }
+
